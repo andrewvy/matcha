@@ -54,7 +54,10 @@ pub fn save_wallet_to_file(wallet: Wallet) -> Result<(), protobuf::ProtobufError
 
 pub fn create_wallet() {
     match load_wallet_from_file() {
-        Err(_) => {
+        Err(protobuf::ProtobufError::WireError(_)) => {
+            println!("Malformated wallet.dat file!");
+        }
+        Err(protobuf::ProtobufError::IoError(_)) => {
             let mut wallet = Wallet::new();
             let address = create_address();
 
@@ -71,6 +74,9 @@ pub fn create_wallet() {
                     println!("Private Key: {:?}", address.private_key);
                 }
             }
+        }
+        Err(e) => {
+            println!("Error: {}", e);
         },
         Ok(_wallet) => {
             println!("Wallet already created!")
