@@ -1,13 +1,17 @@
+extern crate bytes;
+extern crate futures;
+extern crate tokio_io;
+extern crate tokio_proto;
+extern crate tokio_service;
 extern crate rust_sodium;
 extern crate hex;
+extern crate protobuf;
 
+mod config;
 mod wallet;
+mod matcha_pb;
 
 fn main() {
-    let address = wallet::create_address();
-
-    println!("Public ID: {}", address.public_id.to_hex());
-    println!("Public Key: {:?}", address.public_key);
-    println!("Private Key: {:?}", address.private_key);
-    println!("Amount: {:?}", address.amount);
+    config::create_config_dir();
+    wallet::create_wallet();
 }

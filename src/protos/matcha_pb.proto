@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package matcha;
+
+message Wallet {
+  repeated WalletKeypair keypairs = 1;
+}
+
+message WalletKeypair {
+  bytes public_key = 1;
+  bytes secret_key = 2;
+  string name = 3;
+}
