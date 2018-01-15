@@ -1,27 +1,18 @@
-opal
+matcha
 ---
 
-Cryptocurrency implementation in Rust, built for educational reasons.
+Hobby cryptocurrency implementation in Rust, built for educational reasons.
 
-Previously based off of research work from https://github.com/andrewvy/opal
-
-Dependencies
-------------
-
-- rust_sodium (https://github.com/maidsafe/rust_sodium)
-- rocksdb (https://github.com/spacejam/rust-rocksdb)
-- crust (https://github.com/maidsafe/crust)
-- serde (https://github.com/serde-rs/serde)
-- bincode (https://github.com/TyOverby/bincode)
-
+Aims to be a distributed microblog-platform-on-blockchain, via DPoS consensus.
 
 Currency Properties
 ------------
 
+- Delegated Proof-of-Stake Consensus
 - 200,000,000 coins (split into 100 fractions)
-- 60sec block time
-- 10hr difficulty adjustment period
-- Subsidy halving every 200,000 blocks
+- 15sec block time
+- Dynamic witness count
+- 24 hour witness re-election interval
 
 License (MIT)
 ------------
