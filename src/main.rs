@@ -2,12 +2,14 @@ extern crate clap;
 extern crate bytes;
 extern crate futures;
 extern crate tokio_io;
-extern crate tokio_proto;
 extern crate tokio_core;
+extern crate tokio_timer;
 extern crate rust_sodium;
 extern crate hex;
-extern crate bincode;
 extern crate serde;
+extern crate bincode;
+extern crate uuid;
+extern crate rand;
 
 #[macro_use] extern crate failure;
 #[macro_use] extern crate serde_derive;
@@ -15,8 +17,10 @@ extern crate serde;
 mod config;
 mod wallet;
 mod protocol;
+mod codec;
+mod node;
 
-use clap::{App, SubCommand, AppSettings};
+use clap::{App, Arg, SubCommand, AppSettings};
 
 fn main() {
     config::create_config_dir();
@@ -28,6 +32,17 @@ fn main() {
         .subcommand(
             SubCommand::with_name("daemon")
             .about("Starts the daemon process")
+            .arg(
+                Arg::with_name("port")
+                .short("p")
+                .takes_value(true)
+                .required(true)
+            )
+            .arg(
+                Arg::with_name("bootstrap")
+                .short("b")
+                .takes_value(true)
+            )
         )
         .subcommand(
             SubCommand::with_name("wallet")
@@ -42,11 +57,27 @@ fn main() {
                 .about("Lists your wallet")
             )
         );
-
+ 
     let matches = app.get_matches();
 
     match matches.subcommand() {
-        ("daemon", _) => {
+        ("daemon", Some(daemon_matches)) => {
+            let port =
+                if let Some(port) = daemon_matches.value_of("port") {
+                   port
+                } else {
+                   "12345"
+                };
+
+            let server_addr = format!("127.0.0.1:{}", port);
+
+            let mut bootstrap_nodes = Vec::new();
+
+            if let Some(bootstrap_node) = daemon_matches.value_of("bootstrap") {
+                bootstrap_nodes.push(bootstrap_node)
+            }
+
+            node::boot(server_addr, bootstrap_nodes);
         },
         ("wallet", Some(wallet_matches)) => {
             match wallet_matches.subcommand() {

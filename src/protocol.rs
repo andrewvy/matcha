@@ -1,4 +1,7 @@
+use std::net::SocketAddr;
+
 use rust_sodium::crypto::sign;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Wallet {
@@ -21,9 +24,11 @@ pub struct WalletKeypair {
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Message {
-    Ping(u64),
-    Pong(u64),
+    Ping((Uuid, SocketAddr)),
+    Pong((Uuid, SocketAddr)),
+    PeerList(Vec<(Uuid, SocketAddr)>),
 }
 
 #[allow(dead_code)]
