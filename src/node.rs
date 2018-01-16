@@ -20,7 +20,7 @@ use failure::Error;
 use codec::MessageCodec;
 use protocol::Message;
 
-type Tx = mpsc::UnboundedSender<Message>;
+type Channel = mpsc::UnboundedSender<Message>;
 
 #[derive(Clone)]
 pub struct Node {
@@ -44,7 +44,7 @@ impl Node {
         let node_data = self.node_data.clone();
 
         // Start our node.
-        let f = Node::serve(node_data.clone(), handle.clone());
+        let server = Node::serve(node_data.clone(), handle.clone());
 
         // Connect to any specified bootstrap addresses.
         for addr in bootstrap_addrs {
@@ -57,7 +57,7 @@ impl Node {
             Ok(())
         }));
 
-        f
+        server
     }
 
     fn start_client(node_data: Rc<RefCell<NodeData>>, handle: Handle, addr: SocketAddr) {
@@ -74,22 +74,22 @@ impl Node {
             println!("connected... local: {:?}, peer {:?}", socket.local_addr(), socket.peer_addr());
 
             let (sink, stream) = socket.framed(MessageCodec).split();
-            let (tx, rx) = mpsc::unbounded();
+            let (channel, rx) = mpsc::unbounded();
 
             let node_data1 = node_data.clone();
-            let tx1 = tx.clone();
+            let channel1 = channel.clone();
             let handle1 = handle.clone();
             let read = stream.for_each(move |msg| {
-                Node::process(node_data1.clone(), msg, tx1.clone(), handle1.clone())
+                Node::process(node_data1.clone(), msg, channel1.clone(), handle1.clone())
             });
 
             handle.spawn(read.then(|_| Ok(())));
 
             let node_data2 = node_data.clone();
-            let tx2 = tx.clone();
+            let channel2 = channel.clone();
 
-            mpsc::UnboundedSender::unbounded_send(&tx2, Message::Ping((node_data2.borrow().id, node_data2.borrow().addr.clone())))
-                .expect("tx failed");
+            mpsc::UnboundedSender::unbounded_send(&channel2, Message::Ping((node_data2.borrow().id, node_data2.borrow().addr.clone())))
+                .expect("channel failed");
 
             let write = sink.send_all(rx.map_err(|()| {
                 io::Error::new(io::ErrorKind::Other, "rx shouldn't have an error")
@@ -110,13 +110,13 @@ impl Node {
 
         let srv = socket.incoming().for_each(move |(tcpstream, _)| {
             let (sink, stream) = tcpstream.framed(MessageCodec).split();
-            let (tx, rx) = mpsc::unbounded();
+            let (channel, rx) = mpsc::unbounded();
 
             let node_data1= node_data.clone();
-            let tx1 = tx.clone();
+            let channel1 = channel.clone();
             let handle1 = handle.clone();
             let read = stream.for_each(move |msg| {
-                Node::process(node_data1.clone(), msg, tx1.clone(), handle1.clone())
+                Node::process(node_data1.clone(), msg, channel1.clone(), handle1.clone())
             });
 
             handle.spawn(read.then(|_| Ok(())));
@@ -124,6 +124,7 @@ impl Node {
             let write = sink.send_all(rx.map_err(|()| {
                 io::Error::new(io::ErrorKind::Other, "rx shouldn't have an error")
             }));
+
             handle.spawn(write.then(|_| Ok(())));
 
             Ok(())
@@ -132,14 +133,14 @@ impl Node {
         Box::new(srv)
     }
 
-    fn process(node_data: Rc<RefCell<NodeData>>, msg: Message, tx: Tx, handle: Handle) -> Result<(), Error> {
-        println!("processing message: {:?}", msg);
+    fn process(node_data: Rc<RefCell<NodeData>>, message: Message, channel: Channel, handle: Handle) -> Result<(), Error> {
+        println!("processing message: {:?}", message);
 
-        match msg {
-            Message::Ping(m) => node_data.borrow_mut().handle_ping(m, tx),
-            Message::Pong(m) => node_data.borrow_mut().handle_pong(m, tx),
-            Message::PeerList(m) => {
-                for (id, addr) in m {
+        match message {
+            Message::Ping(payload) => node_data.borrow_mut().handle_ping(payload, channel),
+            Message::Pong(payload) => node_data.borrow_mut().handle_pong(payload, channel),
+            Message::PeerList(payload) => {
+                for (id, addr) in payload {
                     let current_peer_list = &node_data.borrow().peers;
 
                     if !current_peer_list.contains_key(&id) && id != node_data.borrow().id {
@@ -152,23 +153,19 @@ impl Node {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn send_random(&self, m: Message) {
-        self.node_data.borrow().send_random(m)
-    }
-
     pub fn gossip_peers(&self, duration: Duration) -> Box<Future<Item=(), Error=io::Error>> {
         let node_data = self.node_data.clone();
-        let f = self.timer.interval(duration).for_each(move |_| {
+        let future = self.timer.interval(duration).for_each(move |_| {
             let node_data1 = node_data.clone();
-            let m = node_data1.borrow().peers
+            let message = node_data1.borrow().peers
                 .iter()
                 .map(|(k, v)| (k.clone(), v.1.clone()))
                 .collect();
-            Ok(node_data.borrow().send_random(Message::PeerList(m)))
+
+            Ok(node_data.borrow().send_random(Message::PeerList(message)))
         });
 
-        Box::new(f.map_err(|e| {
+        Box::new(future.map_err(|e| {
             io::Error::new(io::ErrorKind::Other, e)
         }))
     }
@@ -178,22 +175,23 @@ impl Node {
 struct NodeData {
     pub id: Uuid,
     pub addr: SocketAddr,
-    pub peers: HashMap<Uuid, (Tx, SocketAddr)>,
+    pub peers: HashMap<Uuid, (Channel, SocketAddr)>,
     rng: Rc<RefCell<ThreadRng>>,
 }
 
 impl NodeData {
-    pub fn send_random(&self, m: Message) {
-        let high = self.peers.len();
+    pub fn send_random(&self, message: Message) {
+        let number_of_peers = self.peers.len();
 
-        if self.peers.len() == 0 {
+        if number_of_peers == 0 {
             return;
         } else {
             loop {
-                for v in self.peers.values() {
-                    let tx = &v.0;
-                    if self.rng.borrow_mut().gen_range(0, high) == 0 {
-                        tx.unbounded_send(m).expect("tx send failed");
+                for peer in self.peers.values() {
+                    let channel = &peer.0;
+
+                    if self.rng.borrow_mut().gen_range(0, number_of_peers) == 0 {
+                        channel.unbounded_send(message).expect("channel send failed");
                         return;
                     }
                 }
@@ -201,34 +199,32 @@ impl NodeData {
         }
     }
 
-    fn handle_ping(&mut self, m: (Uuid, SocketAddr), tx: Tx) -> Result<(), Error> {
-        println!("received ping: {:?}", m);
-        match self.peers.get(&m.0) {
+    fn handle_ping(&mut self, message: (Uuid, SocketAddr), channel: Channel) -> Result<(), Error> {
+        match self.peers.get(&message.0) {
             Some(_) => {
                 // @TODO(vy): Drop this connection, as we already have a connection!
                 Ok(())
             }
             None => {
-                println!("adding new node! {:?}", m);
+                println!("adding new node! {:?}", message);
 
-                let tx2 = tx.clone();
-                self.peers.insert(m.0, (tx, m.1));
+                let channel2 = channel.clone();
+                self.peers.insert(message.0, (channel, message.1));
 
-                mpsc::UnboundedSender::unbounded_send(&tx2, Message::Pong((self.id, self.addr)))
+                mpsc::UnboundedSender::unbounded_send(&channel2, Message::Pong((self.id, self.addr)))
                     .map_err(|e| Error::from(e))
             }
         }
     }
 
-    fn handle_pong(&mut self, m: (Uuid, SocketAddr), tx: Tx) -> Result<(), Error> {
-        println!("received pong: {:?}", m);
-        match self.peers.get(&m.0) {
+    fn handle_pong(&mut self, message: (Uuid, SocketAddr), channel: Channel) -> Result<(), Error> {
+        match self.peers.get(&message.0) {
             Some(_) => {
                 // @TODO(vy): Drop this connection, as we already have a connection!
             }
             None => {
-                println!("adding new node! {:?}", m);
-                self.peers.insert(m.0, (tx, m.1));
+                println!("adding new node! {:?}", message);
+                self.peers.insert(message.0, (channel, message.1));
             }
         }
         Ok(())
@@ -239,8 +235,8 @@ pub fn boot(server_addr: String, bootstrap_nodes: Vec<&str>) {
     let parsed_server_addr: SocketAddr = server_addr.parse().unwrap();
     let formatted_bootstrap_nodes = bootstrap_nodes
         .into_iter()
-        .map(|p| {
-            String::from(p).parse().unwrap()
+        .map(|addr| {
+            String::from(addr).parse().unwrap()
         });
 
     let mut core = Core::new().unwrap();
