@@ -6,12 +6,14 @@ extern crate tokio_proto;
 extern crate tokio_service;
 extern crate rust_sodium;
 extern crate hex;
-extern crate protobuf;
+extern crate bincode;
 
-mod server;
+#[macro_use] extern crate failure;
+#[macro_use] extern crate serde_derive;
+
 mod config;
 mod wallet;
-mod matcha_pb;
+mod protocol;
 
 use clap::{App, SubCommand, AppSettings};
 
@@ -44,7 +46,6 @@ fn main() {
 
     match matches.subcommand() {
         ("daemon", _) => {
-            server::start();
         },
         ("wallet", Some(wallet_matches)) => {
             match wallet_matches.subcommand() {

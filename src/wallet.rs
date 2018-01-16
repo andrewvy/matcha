@@ -1,11 +1,11 @@
-
 use rust_sodium::crypto::sign;
 use rust_sodium::crypto::hash;
+use failure::Error;
 use hex;
-use protobuf;
 
 use config;
-use matcha_pb::{Wallet, WalletKeypair};
+
+use protocol::{Wallet, WalletKeypair};
 
 pub trait WalletExtension {
     fn add_keypair(&mut self, name: &str, public_key: &sign::PublicKey, secret_key: &sign::SecretKey);
@@ -14,20 +14,20 @@ pub trait WalletExtension {
 
 impl WalletExtension for Wallet {
     fn add_keypair(&mut self, name: &str, public_key: &sign::PublicKey, secret_key: &sign::SecretKey) {
-        let mut key = WalletKeypair::new();
+        let key = WalletKeypair {
+            name: String::from(name),
+            public_key: public_key.clone(),
+            secret_key: secret_key.clone()
+        };
 
-        key.set_public_key(public_key.0.to_vec());
-        key.set_secret_key(secret_key.0.to_vec());
-        key.set_name(String::from(name));
-
-        self.mut_keypairs().push(key);
+        self.keypairs.push(key);
     }
 
     fn print_keypairs(&self) {
-        self.get_keypairs().iter().for_each(|keypair| {
-            let name = String::from(keypair.get_name());
-            let public_key = sign::PublicKey::from_slice(keypair.get_public_key());
-            let secret_key = sign::SecretKey::from_slice(keypair.get_secret_key());
+        self.keypairs.iter().for_each(|keypair| {
+            let name = &keypair.name;
+            let public_key = &keypair.public_key;
+            let secret_key = &keypair.secret_key;
 
             println!("-- Keypair: {}", name);
             println!("Public Key: {:?}", public_key);
@@ -60,20 +60,17 @@ pub struct Address {
     pub secret_key: sign::SecretKey,
 }
 
-pub fn load_wallet_from_file() -> Result<Wallet, protobuf::ProtobufError> {
-    config::load_proto_from_file("wallet.dat")
+pub fn load_wallet_from_file() -> Result<Wallet, Error> {
+    config::load_bincode_from_file("wallet.dat")
 }
 
-pub fn save_wallet_to_file(wallet: Wallet) -> Result<(), protobuf::ProtobufError> {
-    config::save_proto_to_file("wallet.dat", &wallet)
+pub fn save_wallet_to_file(wallet: Wallet) -> Result<(), Error> {
+    config::save_bincode_to_file("wallet.dat", &wallet)
 }
 
 pub fn create_wallet() {
     match load_wallet_from_file() {
-        Err(protobuf::ProtobufError::WireError(_)) => {
-            println!("Malformated wallet.dat file!");
-        },
-        Err(protobuf::ProtobufError::IoError(_)) => {
+        Err(_) => {
             let mut wallet = Wallet::new();
             let address = create_address();
 
@@ -91,9 +88,6 @@ pub fn create_wallet() {
                 }
             }
         },
-        Err(e) => {
-            println!("Error: {}", e);
-        },
         Ok(wallet) => {
             println!("Wallet already created!");
             wallet.print_keypairs();
@@ -103,12 +97,6 @@ pub fn create_wallet() {
 
 pub fn list_wallet() {
     match load_wallet_from_file() {
-        Err(protobuf::ProtobufError::WireError(_)) => {
-            println!("Malformated wallet.dat file!");
-        },
-        Err(protobuf::ProtobufError::IoError(_)) => {
-            println!("wallet.dat not found!");
-        },
         Err(e) => {
             println!("Error: {}", e);
         },

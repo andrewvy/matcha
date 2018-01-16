@@ -2,8 +2,10 @@ use std::env;
 use std::fs::{DirBuilder, File};
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use failure::Error;
 
-use protobuf::{self, MessageStatic};
+use bincode::{serialize, deserialize, Infinite};
+use protocol;
 
 pub fn get_config_dir() -> PathBuf {
     env::home_dir().unwrap().join(".config/matcha")
@@ -18,15 +20,17 @@ pub fn create_config_dir() {
         .expect("Could not create matcha config dir");
 }
 
-pub fn load_proto_from_file<Message: MessageStatic>(path: &str) -> Result<Message, protobuf::ProtobufError> {
-    let mut proto_in = try!(File::open(&get_config_dir().join(path)));
-    let mut wallet_bytes = vec![];
-    try!(proto_in.read_to_end(&mut wallet_bytes));
-    Ok(try!(protobuf::parse_from_bytes(&wallet_bytes)))
+pub fn load_bincode_from_file(path: &str) -> Result<protocol::Wallet, Error> {
+    let mut file_in = try!(File::open(&get_config_dir().join(path)));
+    let mut bytes = vec![];
+    try!(file_in.read_to_end(&mut bytes));
+    let object = deserialize(&bytes)?;
+    Ok(object)
 }
 
-pub fn save_proto_to_file<Message: MessageStatic>(path: &str, msg: &Message) -> Result<(), protobuf::ProtobufError> {
-    let mut proto_out = try!(File::create(&get_config_dir().join(path)));
-    let wallet_bytes = try!(msg.write_to_bytes());
-    Ok(try!(proto_out.write_all(&wallet_bytes)))
+pub fn save_bincode_to_file(path: &str, msg: &protocol::Wallet) -> Result<(), Error> {
+    let mut file_out = try!(File::create(&get_config_dir().join(path)));
+    let bytes = serialize(msg, Infinite)?;
+    file_out.write_all(&bytes)?;
+    Ok(())
 }
