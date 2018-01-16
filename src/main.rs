@@ -3,10 +3,11 @@ extern crate bytes;
 extern crate futures;
 extern crate tokio_io;
 extern crate tokio_proto;
-extern crate tokio_service;
+extern crate tokio_core;
 extern crate rust_sodium;
 extern crate hex;
 extern crate bincode;
+extern crate serde;
 
 #[macro_use] extern crate failure;
 #[macro_use] extern crate serde_derive;

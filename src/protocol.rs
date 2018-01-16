@@ -20,12 +20,13 @@ pub struct WalletKeypair {
     pub secret_key: sign::SecretKey,
 }
 
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub enum Object {
-    Wallet(Wallet),
-    WalleyKeypair(WalletKeypair)
+#[allow(dead_code)]
+pub enum Message {
+    Ping(u64),
+    Pong(u64),
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Fail)]
 enum Error {
     #[fail(display = "file not found: {}", name)]
@@ -34,6 +35,7 @@ enum Error {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Fail)]
 pub enum ProtocolError {
     #[fail(display = "invalid message")]
@@ -42,4 +44,3 @@ pub enum ProtocolError {
     #[fail(display = "could not serialize message")]
     SerializeError {}
 }
-
