@@ -37,7 +37,10 @@ impl Node {
             rng: Rc::new(RefCell::new(thread_rng())),
         };
 
-        Node { node_data: Rc::new(RefCell::new(node)), timer: Timer::default() }
+        Node {
+            node_data: Rc::new(RefCell::new(node)),
+            timer: Timer::default()
+        }
     }
 
     pub fn run<I: Iterator<Item=SocketAddr>>(&self, handle: Handle, bootstrap_addrs: I) -> Box<Future<Item=(), Error=io::Error>> {
