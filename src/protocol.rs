@@ -29,12 +29,23 @@ pub struct WalletKeypair {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputTransaction {
     // - InputTransaction Header
-    pub tx_id: sha256::Digest,
-    pub txout_index: u32,
+    pub tx_id: sha256::Digest, // 32-bytes
+    pub txout_index: u32, // 4-bytes
     // - ///
 
-    pub signature: sign::Signature,
-    pub public_key: sign::PublicKey,
+    pub signature: sign::Signature, // 64-bytes
+    pub public_key: sign::PublicKey, // 32-bytes
+}
+
+impl InputTransaction {
+    pub fn new() -> InputTransaction {
+        InputTransaction {
+            tx_id: sha256::Digest([0; 32]),
+            txout_index: 0,
+            signature: sign::Signature([0; 64]),
+            public_key: sign::PublicKey([0; 32]),
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -47,7 +58,7 @@ pub struct OutputTransaction {
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Transaction {
-    pub id: sha256::Digest,
+    pub id: sha256::Digest, // 32-bytes
     pub txins: Vec<InputTransaction>,
     pub txouts: Vec<OutputTransaction>,
 }
