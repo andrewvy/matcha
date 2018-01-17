@@ -26,6 +26,7 @@ pub struct WalletKeypair {
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputTransaction {
     // - InputTransaction Header
     pub tx_id: sha256::Digest,
@@ -37,19 +38,32 @@ pub struct InputTransaction {
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputTransaction {
     pub amount: u64,
     pub public_key: sign::PublicKey,
 }
 
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Transaction {
     pub id: sha256::Digest,
     pub txins: Vec<InputTransaction>,
     pub txouts: Vec<OutputTransaction>,
 }
 
+impl Transaction {
+    pub fn new() -> Transaction {
+        Transaction {
+            id: sha256::Digest([0; 32]),
+            txins: Vec::new(),
+            txouts: Vec::new(),
+        }
+    }
+}
+
 #[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Block {
     pub hash: sha256::Digest,
     pub previous_hash: sha256::Digest,

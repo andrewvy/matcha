@@ -1,5 +1,6 @@
 extern crate clap;
 extern crate bytes;
+extern crate byteorder;
 extern crate futures;
 extern crate tokio_io;
 extern crate tokio_core;
@@ -19,6 +20,7 @@ mod wallet;
 mod protocol;
 mod codec;
 mod node;
+mod transaction;
 
 use clap::{App, Arg, SubCommand, AppSettings};
 
