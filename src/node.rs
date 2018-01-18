@@ -64,9 +64,7 @@ impl Node {
     }
 
     fn start_client(node_data: Rc<RefCell<NodeData>>, handle: Handle, addr: SocketAddr) {
-        handle.spawn(Node::start_client_actual(node_data, handle.clone(), &addr).then(move |x| {
-            println!("client {} done {:?}", addr, x);
-
+        handle.spawn(Node::start_client_actual(node_data, handle.clone(), &addr).then(|_| {
             Ok(())
         }));
     }
@@ -152,50 +150,48 @@ impl Node {
     }
 
     fn process(node_data: Rc<RefCell<NodeData>>, message: Message, channel: Channel, handle: Handle) -> Result<(), Error> {
-        println!("processing message: {:?}", message);
-
         match message.get_field_type() {
-            matcha_pb::Message_Type::REQUEST => {
-                let request = message.get_request();
+            matcha_pb::Message_Type::REQUEST => Node::process_request(node_data, message.get_request(), channel, handle),
+            matcha_pb::Message_Type::RESPONSE => Node::process_response(node_data, message.get_response(), channel, handle),
+        }
+    }
 
-                match request.get_field_type() {
-                    matcha_pb::Request_Type::PING_REQUEST => {
-                        node_data.borrow_mut().handle_ping_request(request.get_ping_request(), channel)
-                    }
-                    matcha_pb::Request_Type::PEER_LIST_REQUEST => {
-                        let peer_list_request = request.get_peer_list_request();
-                        let peer_list = peer_list_request.get_peer_list();
-
-                        for peer in peer_list.get_peers() {
-                            let uuid = Uuid::parse_str(peer.get_uuid())?;
-                            let addr = String::from(peer.get_addr()).parse()?;
-                            let current_peer_list = &node_data.borrow().peers;
-
-                            if !current_peer_list.contains_key(&uuid) && uuid != node_data.borrow().id {
-                                println!("adding new node! {:?}", (uuid, addr));
-                                Node::start_client(node_data.clone(), handle.clone(), addr);
-                            }
-                        }
-
-                        Ok(())
-                    }
-                }
+    fn process_request(node_data: Rc<RefCell<NodeData>>, request: &Request, channel: Channel, handle: Handle) -> Result<(), Error> {
+        match request.get_field_type() {
+            matcha_pb::Request_Type::PING_REQUEST => {
+                node_data.borrow_mut().handle_ping_request(request.get_ping_request(), channel)
             }
-            matcha_pb::Message_Type::RESPONSE => {
-                let response = message.get_response();
+            matcha_pb::Request_Type::PEER_LIST_REQUEST => {
+                let peer_list_request = request.get_peer_list_request();
+                let peer_list = peer_list_request.get_peer_list();
 
-                match response.get_field_type() {
-                    matcha_pb::Response_Type::PING_RESPONSE => {
-                        node_data.borrow_mut().handle_ping_response(response.get_ping_response(), channel)
-                    }
-                    matcha_pb::Response_Type::PEER_LIST_RESPONSE => {
-                        // node_data.borrow_mut().handle_peer_list(request.get_peer_list_response(), channel),
-                        Ok(())
-                    }
-                    matcha_pb::Response_Type::DESCRIPTION_ONLY => {
-                        Ok(())
+                for peer in peer_list.get_peers() {
+                    let uuid = Uuid::parse_str(peer.get_uuid())?;
+                    let addr = String::from(peer.get_addr()).parse()?;
+                    let current_peer_list = &node_data.borrow().peers;
+
+                    if !current_peer_list.contains_key(&uuid) && uuid != node_data.borrow().id {
+                        println!("adding new node! {:?}", (uuid, addr));
+                        Node::start_client(node_data.clone(), handle.clone(), addr);
                     }
                 }
+
+                Ok(())
+            }
+        }
+    }
+
+    fn process_response(node_data: Rc<RefCell<NodeData>>, response: &Response, channel: Channel, _handle: Handle) -> Result<(), Error> {
+        match response.get_field_type() {
+            matcha_pb::Response_Type::PING_RESPONSE => {
+                node_data.borrow_mut().handle_ping_response(response.get_ping_response(), channel)
+            }
+            matcha_pb::Response_Type::PEER_LIST_RESPONSE => {
+                // node_data.borrow_mut().handle_peer_list(request.get_peer_list_response(), channel),
+                Ok(())
+            }
+            matcha_pb::Response_Type::DESCRIPTION_ONLY => {
+                Ok(())
             }
         }
     }
@@ -266,8 +262,6 @@ impl NodeData {
     }
 
     fn handle_ping_request(&mut self, ping_request: &matcha_pb::PingRequest, channel: Channel) -> Result<(), Error> {
-        println!("{:?}", ping_request);
-
         let uuid = Uuid::parse_str(ping_request.get_peer().get_uuid())?;
         let addr = String::from(ping_request.get_peer().get_addr()).parse()?;
 
@@ -277,8 +271,6 @@ impl NodeData {
                 Ok(())
             }
             None => {
-                println!("adding new node! {:?}", uuid);
-
                 let channel2 = channel.clone();
                 self.peers.insert(uuid, (channel, addr));
 
@@ -298,6 +290,8 @@ impl NodeData {
                 message.set_field_type(matcha_pb::Message_Type::RESPONSE);
                 message.set_response(response);
 
+                println!("adding new node! {:?}", (uuid, addr));
+
                 mpsc::UnboundedSender::unbounded_send(&channel2, message)
                     .map_err(|e| Error::from(e))
             }
@@ -313,7 +307,6 @@ impl NodeData {
                 // @TODO(vy): Drop this connection, as we already have a connection!
             }
             None => {
-                println!("adding new node! {:?}", uuid);
                 self.peers.insert(uuid, (channel, addr));
             }
         }
