@@ -9,10 +9,12 @@ extern crate rust_sodium;
 extern crate hex;
 extern crate serde;
 extern crate bincode;
+extern crate protobuf;
 extern crate uuid;
 extern crate rand;
 
 #[macro_use] extern crate failure;
+#[macro_use] extern crate failure_derive;
 #[macro_use] extern crate serde_derive;
 
 mod config;
@@ -21,6 +23,7 @@ mod protocol;
 mod codec;
 mod node;
 mod transaction;
+mod matcha_pb;
 
 use clap::{App, Arg, SubCommand, AppSettings};
 

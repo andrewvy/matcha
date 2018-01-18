@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package matcha;
+
+message Wallet {
+  repeated WalletKeypair keypairs = 1;
+}
+
+message WalletKeypair {
+  string name = 1;
+  bytes public_key = 2;
+  bytes secret_key = 3;
+}
+
+message InputTransaction {
+  bytes tx_id = 1;
+  uint32 txout_index = 2;
+
+  bytes signature = 3;
+  bytes public_key = 4;
+}
+
+message OutputTransaction {
+  enum TransactionType {
+    NORMAL_TX = 0;
+    DELEGATE_VOTE_TX = 1;
+    USERNAME_REGISTRATION_TX = 2;
+    NEW_POST_TX = 3;
+    AVATAR_UPLOAD_TX = 4;
+    FAVOURITE_POST_TX = 5;
+  }
+
+  // Normal pubkey -> pubkey TX.
+  message NormalTransaction {
+    bytes public_key = 1;
+  }
+
+  // DelegateVotes are calculated at every re-election
+  // interval, but only if they are unspent.
+  message DelegateVoteTransaction {
+    bytes delegate_public_key = 1;
+    bytes public_key = 2;
+  }
+
+  // Vanity alphanumeric usernames are optional.
+  message UsernameRegistrationTransaction {
+    string username = 1;
+  }
+
+  // The max content limit is 140 codepoints, NFC-normalized.
+  message NewPostTransaction {
+    bytes content = 1;
+  }
+
+  // Avatar images are able to be stored in the blockdata,
+  // but will cost more per byte based on a exponential curve
+  // to deter uploading large avatar images.
+  message AvatarUploadTransaction {
+    bytes image_data = 1;
+  }
+
+  // Must reference valid txid + txout that is a NewPostTransaction.
+  message FavouritePostTransaction {
+    bytes tx_id = 1;
+    uint32 txout_index = 2;
+  }
+
+  TransactionType transaction_type = 1;
+  uint64 amount = 2;
+
+  NormalTransaction normal_tx = 3;
+  DelegateVoteTransaction delegate_vote_tx = 4;
+  UsernameRegistrationTransaction username_registration_tx = 5;
+  NewPostTransaction new_post_tx = 6;
+  AvatarUploadTransaction avatar_upload_tx = 7;
+  FavouritePostTransaction favourite_post_tx = 8;
+}
+
+message Transaction {
+  bytes id = 1;
+  repeated InputTransaction txins = 2;
+  repeated OutputTransaction txouts = 3;
+}
+
+message Block {
+  uint32 version = 1;
+  bytes public_key = 2;
+  bytes previous_hash = 3;
+  bytes transaction_root = 4;
+  uint64 timestamp = 5;
+
+  repeated Transaction transactions = 6;
+}
+
+message SignedBlock {
+  bytes signature = 1;
+  Block block = 2;
+}
+
+// FullBlock(SignedBlock(Block))
+message FullBlock {
+  bytes hash = 1;
+  SignedBlock signed_block = 2;
+}
+
+// ---
+// Protocol Messages
+// ---
+
+
+message Message {
+  enum Type {
+    REQUEST = 0;
+    RESPONSE = 1;
+  }
+
+  Type type = 1;
+  Request request = 2;
+  Response response = 3;
+}
+
+message Request {
+  enum Type {
+    PING_REQUEST = 0;
+    PEER_LIST_REQUEST = 1;
+  }
+
+  Type type = 1;
+
+  PingRequest ping_request = 2;
+  PeerListRequest peer_list_request = 3;
+}
+
+message Response {
+  enum Status {
+    INVALID_REQUEST = 0;
+    ACK = 1;
+    TOO_MANY_REQUESTS = 2;
+    INTERNAL_SERVER_ERROR = 3;
+  }
+
+  enum Type {
+    DESCRIPTION_ONLY = 0;
+    PING_RESPONSE = 1;
+    PEER_LIST_RESPONSE = 2;
+  }
+
+  Status status = 1;
+  Type type = 2;
+  string description = 3;
+
+  PingResponse ping_response = 4;
+  PeerListResponse peer_list_response = 5;
+}
+
+message Peer {
+  string uuid = 1;
+  string addr = 2;
+}
+
+message PeerList {
+  repeated Peer peers = 1;
+}
+
+message PingRequest {
+  Peer peer = 1;
+}
+
+message PingResponse {
+  Peer peer = 1;
+}
+
+message PeerListRequest {
+  PeerList peer_list = 1;
+}
+
+message PeerListResponse {
+  PeerList peer_list = 1;
+}

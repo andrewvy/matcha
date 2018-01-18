@@ -18,7 +18,7 @@ use rand::{thread_rng, Rng, ThreadRng};
 use failure::Error;
 
 use codec::MessageCodec;
-use protocol::Message;
+use matcha_pb::{self, Message, Request, Response};
 
 type Channel = mpsc::UnboundedSender<Message>;
 
@@ -91,7 +91,22 @@ impl Node {
             let node_data2 = node_data.clone();
             let channel2 = channel.clone();
 
-            mpsc::UnboundedSender::unbounded_send(&channel2, Message::Ping((node_data2.borrow().id, node_data2.borrow().addr.clone())))
+            let mut peer = matcha_pb::Peer::new();
+            peer.set_uuid(node_data2.borrow().id.to_string());
+            peer.set_addr(node_data2.borrow().addr.to_string());
+
+            let mut ping_request = matcha_pb::PingRequest::new();
+            ping_request.set_peer(peer);
+
+            let mut request = Request::new();
+            request.set_field_type(matcha_pb::Request_Type::PING_REQUEST);
+            request.set_ping_request(ping_request);
+
+            let mut message = Message::new();
+            message.set_field_type(matcha_pb::Message_Type::REQUEST);
+            message.set_request(request);
+
+            mpsc::UnboundedSender::unbounded_send(&channel2, message)
                 .expect("channel failed");
 
             let write = sink.send_all(rx.map_err(|()| {
@@ -139,20 +154,49 @@ impl Node {
     fn process(node_data: Rc<RefCell<NodeData>>, message: Message, channel: Channel, handle: Handle) -> Result<(), Error> {
         println!("processing message: {:?}", message);
 
-        match message {
-            Message::Ping(payload) => node_data.borrow_mut().handle_ping(payload, channel),
-            Message::Pong(payload) => node_data.borrow_mut().handle_pong(payload, channel),
-            Message::PeerList(payload) => {
-                for (id, addr) in payload {
-                    let current_peer_list = &node_data.borrow().peers;
+        match message.get_field_type() {
+            matcha_pb::Message_Type::REQUEST => {
+                let request = message.get_request();
 
-                    if !current_peer_list.contains_key(&id) && id != node_data.borrow().id {
-                        println!("adding new node! {:?}", (id, addr));
-                        Node::start_client(node_data.clone(), handle.clone(), addr);
+                match request.get_field_type() {
+                    matcha_pb::Request_Type::PING_REQUEST => {
+                        node_data.borrow_mut().handle_ping_request(request.get_ping_request(), channel)
+                    }
+                    matcha_pb::Request_Type::PEER_LIST_REQUEST => {
+                        let peer_list_request = request.get_peer_list_request();
+                        let peer_list = peer_list_request.get_peer_list();
+
+                        for peer in peer_list.get_peers() {
+                            let uuid = Uuid::parse_str(peer.get_uuid())?;
+                            let addr = String::from(peer.get_addr()).parse()?;
+                            let current_peer_list = &node_data.borrow().peers;
+
+                            if !current_peer_list.contains_key(&uuid) && uuid != node_data.borrow().id {
+                                println!("adding new node! {:?}", (uuid, addr));
+                                Node::start_client(node_data.clone(), handle.clone(), addr);
+                            }
+                        }
+
+                        Ok(())
                     }
                 }
-                Ok(())
-            },
+            }
+            matcha_pb::Message_Type::RESPONSE => {
+                let response = message.get_response();
+
+                match response.get_field_type() {
+                    matcha_pb::Response_Type::PING_RESPONSE => {
+                        node_data.borrow_mut().handle_ping_response(response.get_ping_response(), channel)
+                    }
+                    matcha_pb::Response_Type::PEER_LIST_RESPONSE => {
+                        // node_data.borrow_mut().handle_peer_list(request.get_peer_list_response(), channel),
+                        Ok(())
+                    }
+                    matcha_pb::Response_Type::DESCRIPTION_ONLY => {
+                        Ok(())
+                    }
+                }
+            }
         }
     }
 
@@ -160,12 +204,31 @@ impl Node {
         let node_data = self.node_data.clone();
         let future = self.timer.interval(duration).for_each(move |_| {
             let node_data1 = node_data.clone();
-            let message = node_data1.borrow().peers
+            let peers = node_data1.borrow().peers
                 .iter()
-                .map(|(k, v)| (k.clone(), v.1.clone()))
+                .map(|(uuid, &(_, addr))| {
+                    let mut peer = matcha_pb::Peer::new();
+                    peer.set_uuid(uuid.clone().to_string());
+                    peer.set_addr(addr.clone().to_string());
+                    peer
+                })
                 .collect();
 
-            Ok(node_data.borrow().send_random(Message::PeerList(message)))
+            let mut peer_list = matcha_pb::PeerList::new();
+            peer_list.set_peers(peers);
+
+            let mut peer_list_request = matcha_pb::PeerListRequest::new();
+            peer_list_request.set_peer_list(peer_list);
+
+            let mut request = Request::new();
+            request.set_field_type(matcha_pb::Request_Type::PEER_LIST_REQUEST);
+            request.set_peer_list_request(peer_list_request);
+
+            let mut message = Message::new();
+            message.set_field_type(matcha_pb::Message_Type::REQUEST);
+            message.set_request(request);
+
+            Ok(node_data.borrow().send_random(message))
         });
 
         Box::new(future.map_err(|e| {
@@ -202,32 +265,56 @@ impl NodeData {
         }
     }
 
-    fn handle_ping(&mut self, message: (Uuid, SocketAddr), channel: Channel) -> Result<(), Error> {
-        match self.peers.get(&message.0) {
+    fn handle_ping_request(&mut self, ping_request: &matcha_pb::PingRequest, channel: Channel) -> Result<(), Error> {
+        println!("{:?}", ping_request);
+
+        let uuid = Uuid::parse_str(ping_request.get_peer().get_uuid())?;
+        let addr = String::from(ping_request.get_peer().get_addr()).parse()?;
+
+        match self.peers.get(&uuid) {
             Some(_) => {
                 // @TODO(vy): Drop this connection, as we already have a connection!
                 Ok(())
             }
             None => {
-                println!("adding new node! {:?}", message);
+                println!("adding new node! {:?}", uuid);
 
                 let channel2 = channel.clone();
-                self.peers.insert(message.0, (channel, message.1));
+                self.peers.insert(uuid, (channel, addr));
 
-                mpsc::UnboundedSender::unbounded_send(&channel2, Message::Pong((self.id, self.addr)))
+                let mut peer = matcha_pb::Peer::new();
+                peer.set_uuid(self.id.to_string());
+                peer.set_addr(self.addr.to_string());
+
+                let mut ping_response = matcha_pb::PingResponse::new();
+                ping_response.set_peer(peer);
+
+                let mut response = Response::new();
+                response.set_status(matcha_pb::Response_Status::ACK);
+                response.set_field_type(matcha_pb::Response_Type::PING_RESPONSE);
+                response.set_ping_response(ping_response);
+
+                let mut message = Message::new();
+                message.set_field_type(matcha_pb::Message_Type::RESPONSE);
+                message.set_response(response);
+
+                mpsc::UnboundedSender::unbounded_send(&channel2, message)
                     .map_err(|e| Error::from(e))
             }
         }
     }
 
-    fn handle_pong(&mut self, message: (Uuid, SocketAddr), channel: Channel) -> Result<(), Error> {
-        match self.peers.get(&message.0) {
+    fn handle_ping_response(&mut self, ping_response: &matcha_pb::PingResponse, channel: Channel) -> Result<(), Error> {
+        let uuid = Uuid::parse_str(ping_response.get_peer().get_uuid())?;
+        let addr = String::from(ping_response.get_peer().get_addr()).parse()?;
+
+        match self.peers.get(&uuid) {
             Some(_) => {
                 // @TODO(vy): Drop this connection, as we already have a connection!
             }
             None => {
-                println!("adding new node! {:?}", message);
-                self.peers.insert(message.0, (channel, message.1));
+                println!("adding new node! {:?}", uuid);
+                self.peers.insert(uuid, (channel, addr));
             }
         }
         Ok(())
@@ -235,11 +322,11 @@ impl NodeData {
 }
 
 pub fn boot(server_addr: String, bootstrap_nodes: Vec<&str>) {
-    let parsed_server_addr: SocketAddr = server_addr.parse().unwrap();
+    let parsed_server_addr: SocketAddr = server_addr.parse().expect("No valid port specified");
     let formatted_bootstrap_nodes = bootstrap_nodes
         .into_iter()
         .map(|addr| {
-            String::from(addr).parse().unwrap()
+            String::from(addr).parse().expect("Malformed bootstrap node address")
         });
 
     let mut core = Core::new().unwrap();

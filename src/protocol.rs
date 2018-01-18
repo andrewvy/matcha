@@ -115,13 +115,3 @@ enum Error {
         name: String
     }
 }
-
-#[allow(dead_code)]
-#[derive(Debug, Fail)]
-pub enum ProtocolError {
-    #[fail(display = "invalid message")]
-    InvalidMessage {},
-
-    #[fail(display = "could not serialize message")]
-    SerializeError {}
-}
