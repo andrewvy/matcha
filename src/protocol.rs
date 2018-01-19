@@ -1,9 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::net::SocketAddr;
 
 use rust_sodium::crypto::sign;
 use rust_sodium::crypto::hash::sha256;
-use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Wallet {
@@ -37,6 +35,7 @@ pub struct InputTransaction {
     pub public_key: sign::PublicKey, // 32-bytes
 }
 
+#[allow(dead_code)]
 impl InputTransaction {
     pub fn new() -> InputTransaction {
         InputTransaction {
@@ -63,6 +62,7 @@ pub struct Transaction {
     pub txouts: Vec<OutputTransaction>,
 }
 
+#[allow(dead_code)]
 impl Transaction {
     pub fn new() -> Transaction {
         Transaction {
@@ -98,13 +98,6 @@ impl Block {
             transactions: Vec::new(),
         }
     }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Message {
-    Ping((Uuid, SocketAddr)),
-    Pong((Uuid, SocketAddr)),
-    PeerList(Vec<(Uuid, SocketAddr)>),
 }
 
 #[allow(dead_code)]

@@ -4,9 +4,8 @@ use bytes::BytesMut;
 #[allow(unused_imports)]
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 
-use hex;
 
-use protocol::{Transaction, InputTransaction};
+use protocol::Transaction;
 
 
 pub trait TransactionExtension {
@@ -45,6 +44,8 @@ impl TransactionExtension for Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use transaction::InputTransaction;
+    use hex;
 
     #[test]
     fn can_hash_empty_transaction() {
