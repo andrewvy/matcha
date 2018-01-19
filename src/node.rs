@@ -9,7 +9,6 @@ use futures::{Future, Sink, Stream};
 use tokio_io::{AsyncRead};
 use tokio_core::reactor::{Core, Handle};
 use tokio_core::net::{TcpStream, TcpListener};
-
 use failure::Error;
 
 use codec::MessageCodec;
@@ -40,17 +39,23 @@ impl Node {
 #[derive(Debug)]
 struct NodeData {
     pub addr: SocketAddr,
-    pub peers: HashMap<SocketAddr, PeerChannel>
+    pub peers: HashMap<SocketAddr, mpsc::UnboundedSender<bool>>
 }
 
-fn connect_to_peer(node_data: RefNodeData, handle: Handle, peer_addr: SocketAddr) -> Box<Future<Item = (), Error = io::Error>> {
+// Graciously stole from: https://github.com/jgallagher/tokio-chat-example/blob/master/tokio-chat-server/src/main.rs#L107
+// Very helpful for debugging type errors in Futures/Streams.
+fn _debugf<F: Future<Item = (), Error = Error>>(_: F) {}
+fn _debugs<S: Stream<Item = (), Error = Error>>(_: S) {}
+
+fn connect_to_peer(node_data: RefNodeData, handle: Handle, peer_addr: SocketAddr) -> Box<Future<Item = (), Error = Error>> {
     let client = TcpStream::connect(&peer_addr, &handle).and_then(move |conn| {
         let (sink, stream) = conn.framed(MessageCodec).split();
         let (peer_tx, peer_rx) = mpsc::unbounded::<Message>();
+        let (shutdown_tx, shutdown_rx) = mpsc::unbounded::<bool>();
         let inner_handle = handle.clone();
         let inner_node_data = node_data.clone();
 
-        add_peer(node_data.clone(), peer_addr, peer_tx.clone());
+        add_peer(node_data.clone(), peer_addr, shutdown_tx.clone());
 
         let mut peer = matcha_pb::Peer::new();
         peer.set_addr(node_data.borrow().addr.to_string());
@@ -71,23 +76,29 @@ fn connect_to_peer(node_data: RefNodeData, handle: Handle, peer_addr: SocketAddr
 
         peer_tx.clone().unbounded_send(message).expect("could not send peerlist");
 
+        // Future<(), ()>
         let reader = stream
             .for_each(move |msg| handle_message(node_data.clone(), peer_addr, msg, inner_handle.clone(), peer_tx.clone()))
-            .map_err(|_| format_err!(""))
-            .then(move |_| {
+            .map(move |_: ()| {
                 remove_peer(inner_node_data.clone(), peer_addr);
-                Ok(())
-            });
+                ()
+            })
+            .map_err(|_: Error| ());
 
-        let writer = sink.send_all(peer_rx.map_err(|_| format_err!("Error in sending"))).then(|_| {
-            Ok(())
-        });
+        // Stream<Message, Error>
+        let rx_stream = peer_rx.map_err(|_| format_err!("Error in sending!"));
+
+        // Stream<Message, Error> -> Future<(), ()>
+        let writer = sink.send_all(rx_stream).map(|_| ()).map_err(|_| ());
+
+        // Stream<SocketAddr>  -> Future((), ())
+        let shutdown_stream = shutdown_rx.map(|_| ()).map_err(|_| ()).into_future();
         
-        handle.spawn(reader);
+        handle.spawn(reader.select2(shutdown_stream).then(|_| Ok(())));
         handle.spawn(writer);
 
         Ok(())
-    });
+    }).map(|_| ()).map_err(|_| format_err!("Error!"));
 
     Box::new(client)
 }
@@ -103,26 +114,33 @@ fn serve(node_data: RefNodeData, handle: Handle, addr: &SocketAddr) -> Box<Futur
             .for_each(move |(conn, peer_addr)| {
                 let (sink, stream) = conn.framed(MessageCodec).split();
                 let (peer_tx, peer_rx) = mpsc::unbounded::<Message>();
+                let (shutdown_tx, shutdown_rx) = mpsc::unbounded::<bool>();
                 let inner_handle = handle.clone();
 
                 let handler_node_data = node_data.clone();
                 let inner_node_data = node_data.clone();
 
-                add_peer(node_data.clone(), peer_addr, peer_tx.clone());
+                add_peer(node_data.clone(), peer_addr, shutdown_tx.clone());
 
+                // Future<(), ()>
                 let reader = stream
                     .for_each(move |msg| handle_message(handler_node_data.clone(), peer_addr, msg, inner_handle.clone(), peer_tx.clone()))
-                    .map_err(|_| format_err!(""))
-                    .then(move |_| {
+                    .map(move |_: ()| {
                         remove_peer(inner_node_data.clone(), peer_addr);
-                        Ok(())
-                    });
+                        ()
+                    })
+                    .map_err(|_: Error| ());
 
-                let writer = sink.send_all(peer_rx.map_err(|_| format_err!("Error in sending"))).then(|_| {
-                    Ok(())
-                });
+                // Stream<Message, Error>
+                let rx_stream = peer_rx.map_err(|_| format_err!("Error in sending!"));
+
+                // Stream<Message, Error> -> Future<(), ()>
+                let writer = sink.send_all(rx_stream).map(|_| ()).map_err(|_| ());
+
+                // Stream<SocketAddr>  -> Future((), ())
+                let shutdown_stream = shutdown_rx.map(|_| ()).map_err(|_| ()).into_future();
                 
-                handle.spawn(reader);
+                handle.spawn(reader.select2(shutdown_stream).then(|_| Ok(())));
                 handle.spawn(writer);
 
                 Ok(())
@@ -131,7 +149,7 @@ fn serve(node_data: RefNodeData, handle: Handle, addr: &SocketAddr) -> Box<Futur
     Box::new(server)
 }
 
-fn add_peer(node_data: RefNodeData, peer_addr: SocketAddr, peer_tx: PeerChannel) {
+fn add_peer(node_data: RefNodeData, peer_addr: SocketAddr, peer_tx: mpsc::UnboundedSender<bool>) {
     println!("adding peer to peerlist: {:?}", peer_addr);
     node_data.borrow_mut().peers.insert(peer_addr, peer_tx.clone());
 }
