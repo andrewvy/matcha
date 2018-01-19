@@ -154,7 +154,6 @@ message Response {
 }
 
 message Peer {
-  string uuid = 1;
   string addr = 2;
 }
 

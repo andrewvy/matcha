@@ -5030,7 +5030,6 @@ impl ::protobuf::reflect::ProtobufValue for Response_Type {
 #[derive(PartialEq,Clone,Default)]
 pub struct Peer {
     // message fields
-    pub uuid: ::std::string::String,
     pub addr: ::std::string::String,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
@@ -5053,40 +5052,6 @@ impl Peer {
         unsafe {
             instance.get(Peer::new)
         }
-    }
-
-    // string uuid = 1;
-
-    pub fn clear_uuid(&mut self) {
-        self.uuid.clear();
-    }
-
-    // Param is passed by value, moved
-    pub fn set_uuid(&mut self, v: ::std::string::String) {
-        self.uuid = v;
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_uuid(&mut self) -> &mut ::std::string::String {
-        &mut self.uuid
-    }
-
-    // Take field
-    pub fn take_uuid(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.uuid, ::std::string::String::new())
-    }
-
-    pub fn get_uuid(&self) -> &str {
-        &self.uuid
-    }
-
-    fn get_uuid_for_reflect(&self) -> &::std::string::String {
-        &self.uuid
-    }
-
-    fn mut_uuid_for_reflect(&mut self) -> &mut ::std::string::String {
-        &mut self.uuid
     }
 
     // string addr = 2;
@@ -5133,9 +5098,6 @@ impl ::protobuf::Message for Peer {
         while !is.eof()? {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
-                1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.uuid)?;
-                },
                 2 => {
                     ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.addr)?;
                 },
@@ -5151,9 +5113,6 @@ impl ::protobuf::Message for Peer {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
-        if !self.uuid.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.uuid);
-        }
         if !self.addr.is_empty() {
             my_size += ::protobuf::rt::string_size(2, &self.addr);
         }
@@ -5163,9 +5122,6 @@ impl ::protobuf::Message for Peer {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
-        if !self.uuid.is_empty() {
-            os.write_string(1, &self.uuid)?;
-        }
         if !self.addr.is_empty() {
             os.write_string(2, &self.addr)?;
         }
@@ -5214,11 +5170,6 @@ impl ::protobuf::MessageStatic for Peer {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "uuid",
-                    Peer::get_uuid_for_reflect,
-                    Peer::mut_uuid_for_reflect,
-                ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
                     "addr",
                     Peer::get_addr_for_reflect,
                     Peer::mut_addr_for_reflect,
@@ -5235,7 +5186,6 @@ impl ::protobuf::MessageStatic for Peer {
 
 impl ::protobuf::Clear for Peer {
     fn clear(&mut self) {
-        self.clear_uuid();
         self.clear_addr();
         self.unknown_fields.clear();
     }
@@ -6265,15 +6215,15 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \"X\n\x06Status\x12\x13\n\x0fINVALID_REQUEST\x10\0\x12\x07\n\x03ACK\x10\
     \x01\x12\x15\n\x11TOO_MANY_REQUESTS\x10\x02\x12\x19\n\x15INTERNAL_SERVER\
     _ERROR\x10\x03\"G\n\x04Type\x12\x14\n\x10DESCRIPTION_ONLY\x10\0\x12\x11\
-    \n\rPING_RESPONSE\x10\x01\x12\x16\n\x12PEER_LIST_RESPONSE\x10\x02\".\n\
-    \x04Peer\x12\x12\n\x04uuid\x18\x01\x20\x01(\tR\x04uuid\x12\x12\n\x04addr\
-    \x18\x02\x20\x01(\tR\x04addr\".\n\x08PeerList\x12\"\n\x05peers\x18\x01\
-    \x20\x03(\x0b2\x0c.matcha.PeerR\x05peers\"/\n\x0bPingRequest\x12\x20\n\
-    \x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"0\n\x0cPingResp\
-    onse\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"@\
-    \n\x0fPeerListRequest\x12-\n\tpeer_list\x18\x01\x20\x01(\x0b2\x10.matcha\
-    .PeerListR\x08peerList\"A\n\x10PeerListResponse\x12-\n\tpeer_list\x18\
-    \x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08peerListb\x06proto3\
+    \n\rPING_RESPONSE\x10\x01\x12\x16\n\x12PEER_LIST_RESPONSE\x10\x02\"\x1a\
+    \n\x04Peer\x12\x12\n\x04addr\x18\x02\x20\x01(\tR\x04addr\".\n\x08PeerLis\
+    t\x12\"\n\x05peers\x18\x01\x20\x03(\x0b2\x0c.matcha.PeerR\x05peers\"/\n\
+    \x0bPingRequest\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\
+    \x04peer\"0\n\x0cPingResponse\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\
+    \x0c.matcha.PeerR\x04peer\"@\n\x0fPeerListRequest\x12-\n\tpeer_list\x18\
+    \x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08peerList\"A\n\x10PeerListResp\
+    onse\x12-\n\tpeer_list\x18\x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08pee\
+    rListb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {
