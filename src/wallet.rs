@@ -115,8 +115,3 @@ pub fn create_address() -> Address {
         secret_key: sk,
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

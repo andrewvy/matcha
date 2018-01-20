@@ -44,7 +44,7 @@ impl TransactionExtension for Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use transaction::InputTransaction;
+    use protocol::InputTransaction;
     use hex;
 
     #[test]
