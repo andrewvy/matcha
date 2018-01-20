@@ -1,11 +1,10 @@
 use std::env;
 use std::fs::{DirBuilder, File};
-use std::io::Write;
-use std::path::PathBuf;
+use std::io::{BufReader};
+use std::path::{PathBuf};
 
+use protobuf::{self, MessageStatic};
 use failure::Error;
-use serde::{Serialize, Deserialize};
-use bincode::{serialize, deserialize_from, Infinite};
 
 pub fn get_config_dir() -> PathBuf {
     env::home_dir().unwrap().join(".config/matcha")
@@ -20,15 +19,25 @@ pub fn create_config_dir() {
         .expect("Could not create matcha config dir");
 }
 
-pub fn load_bincode_from_file<T>(path: &str) -> Result<T, Error> where for<'de> T: Deserialize<'de> {
-    let mut file_in = try!(File::open(&get_config_dir().join(path)));
-    let object = deserialize_from(&mut file_in, Infinite)?;
-    Ok(object)
+pub fn load_proto_from_file<T: MessageStatic>(path: &str) -> Result<T, Error> {
+    match File::open(&get_config_dir().join(path)) {
+        Ok(file_in) => {
+            let mut reader = BufReader::new(file_in);
+
+            protobuf::parse_from_reader(&mut reader)
+                .map_err(|_| format_err!("Could not read from {}", path))
+        },
+        Err(_) => Err(format_err!("Could not open {} for reading", path)),
+    }
 }
 
-pub fn save_bincode_to_file<T>(path: &str, msg: &T) -> Result<(), Error> where T: Serialize {
-    let mut file_out = try!(File::create(&get_config_dir().join(path)));
-    let bytes = serialize(msg, Infinite)?;
-    file_out.write_all(&bytes)?;
-    Ok(())
+pub fn save_proto_to_file<T: MessageStatic>(path: &str, msg: &T) -> Result<(), Error> {
+    match File::create(&get_config_dir().join(path)) {
+        Ok(mut file_out) => {
+            msg
+                .write_to_writer(&mut file_out)
+                .map_err(|_| format_err!("Could not write to {}", path))
+        },
+        Err(_) => Err(format_err!("Could not open {} for writing", path)),
+    }
 }

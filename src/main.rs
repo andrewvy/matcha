@@ -8,7 +8,6 @@ extern crate tokio_timer;
 extern crate rust_sodium;
 extern crate hex;
 extern crate serde;
-extern crate bincode;
 extern crate protobuf;
 extern crate uuid;
 extern crate rand;
@@ -87,7 +86,7 @@ fn main() {
         ("wallet", Some(wallet_matches)) => {
             match wallet_matches.subcommand() {
                 ("create", _) => wallet::create_wallet(),
-                ("list", _) => wallet::list_wallet(),
+                // ("list", _) => wallet::list_wallet(),
                 _ => unreachable!("No command specified!")
             }
         },

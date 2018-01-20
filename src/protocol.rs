@@ -3,26 +3,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rust_sodium::crypto::sign;
 use rust_sodium::crypto::hash::sha256;
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Wallet {
-    pub keypairs: Vec<WalletKeypair>
-}
-
-impl Wallet {
-    pub fn new() -> Wallet {
-        Wallet {
-            keypairs: Vec::new()
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WalletKeypair {
-    pub name: String,
-    pub public_key: sign::PublicKey,
-    pub secret_key: sign::SecretKey,
-}
-
 #[allow(dead_code)]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputTransaction {

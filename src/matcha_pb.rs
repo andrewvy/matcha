@@ -210,6 +210,7 @@ pub struct WalletKeypair {
     pub name: ::std::string::String,
     pub public_key: ::std::vec::Vec<u8>,
     pub secret_key: ::std::vec::Vec<u8>,
+    pub amount: u64,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
     cached_size: ::protobuf::CachedSize,
@@ -334,6 +335,29 @@ impl WalletKeypair {
     fn mut_secret_key_for_reflect(&mut self) -> &mut ::std::vec::Vec<u8> {
         &mut self.secret_key
     }
+
+    // uint64 amount = 4;
+
+    pub fn clear_amount(&mut self) {
+        self.amount = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_amount(&mut self, v: u64) {
+        self.amount = v;
+    }
+
+    pub fn get_amount(&self) -> u64 {
+        self.amount
+    }
+
+    fn get_amount_for_reflect(&self) -> &u64 {
+        &self.amount
+    }
+
+    fn mut_amount_for_reflect(&mut self) -> &mut u64 {
+        &mut self.amount
+    }
 }
 
 impl ::protobuf::Message for WalletKeypair {
@@ -353,6 +377,13 @@ impl ::protobuf::Message for WalletKeypair {
                 },
                 3 => {
                     ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.secret_key)?;
+                },
+                4 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint64()?;
+                    self.amount = tmp;
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -375,6 +406,9 @@ impl ::protobuf::Message for WalletKeypair {
         if !self.secret_key.is_empty() {
             my_size += ::protobuf::rt::bytes_size(3, &self.secret_key);
         }
+        if self.amount != 0 {
+            my_size += ::protobuf::rt::value_size(4, self.amount, ::protobuf::wire_format::WireTypeVarint);
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -389,6 +423,9 @@ impl ::protobuf::Message for WalletKeypair {
         }
         if !self.secret_key.is_empty() {
             os.write_bytes(3, &self.secret_key)?;
+        }
+        if self.amount != 0 {
+            os.write_uint64(4, self.amount)?;
         }
         os.write_unknown_fields(self.get_unknown_fields())?;
         ::std::result::Result::Ok(())
@@ -449,6 +486,11 @@ impl ::protobuf::MessageStatic for WalletKeypair {
                     WalletKeypair::get_secret_key_for_reflect,
                     WalletKeypair::mut_secret_key_for_reflect,
                 ));
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint64>(
+                    "amount",
+                    WalletKeypair::get_amount_for_reflect,
+                    WalletKeypair::mut_amount_for_reflect,
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<WalletKeypair>(
                     "WalletKeypair",
                     fields,
@@ -464,6 +506,7 @@ impl ::protobuf::Clear for WalletKeypair {
         self.clear_name();
         self.clear_public_key();
         self.clear_secret_key();
+        self.clear_amount();
         self.unknown_fields.clear();
     }
 }
@@ -6152,62 +6195,63 @@ impl ::protobuf::reflect::ProtobufValue for PeerListResponse {
 
 static file_descriptor_proto_data: &'static [u8] = b"\
     \n\x1asrc/protos/matcha_pb.proto\x12\x06matcha\";\n\x06Wallet\x121\n\x08\
-    keypairs\x18\x01\x20\x03(\x0b2\x15.matcha.WalletKeypairR\x08keypairs\"a\
+    keypairs\x18\x01\x20\x03(\x0b2\x15.matcha.WalletKeypairR\x08keypairs\"y\
     \n\rWalletKeypair\x12\x12\n\x04name\x18\x01\x20\x01(\tR\x04name\x12\x1d\
     \n\npublic_key\x18\x02\x20\x01(\x0cR\tpublicKey\x12\x1d\n\nsecret_key\
-    \x18\x03\x20\x01(\x0cR\tsecretKey\"\x85\x01\n\x10InputTransaction\x12\
+    \x18\x03\x20\x01(\x0cR\tsecretKey\x12\x16\n\x06amount\x18\x04\x20\x01(\
+    \x04R\x06amount\"\x85\x01\n\x10InputTransaction\x12\x13\n\x05tx_id\x18\
+    \x01\x20\x01(\x0cR\x04txId\x12\x1f\n\x0btxout_index\x18\x02\x20\x01(\rR\
+    \ntxoutIndex\x12\x1c\n\tsignature\x18\x03\x20\x01(\x0cR\tsignature\x12\
+    \x1d\n\npublic_key\x18\x04\x20\x01(\x0cR\tpublicKey\"\xd6\t\n\x11OutputT\
+    ransaction\x12T\n\x10transaction_type\x18\x01\x20\x01(\x0e2).matcha.Outp\
+    utTransaction.TransactionTypeR\x0ftransactionType\x12\x16\n\x06amount\
+    \x18\x02\x20\x01(\x04R\x06amount\x12H\n\tnormal_tx\x18\x03\x20\x01(\x0b2\
+    +.matcha.OutputTransaction.NormalTransactionR\x08normalTx\x12[\n\x10dele\
+    gate_vote_tx\x18\x04\x20\x01(\x0b21.matcha.OutputTransaction.DelegateVot\
+    eTransactionR\x0edelegateVoteTx\x12s\n\x18username_registration_tx\x18\
+    \x05\x20\x01(\x0b29.matcha.OutputTransaction.UsernameRegistrationTransac\
+    tionR\x16usernameRegistrationTx\x12L\n\x0bnew_post_tx\x18\x06\x20\x01(\
+    \x0b2,.matcha.OutputTransaction.NewPostTransactionR\tnewPostTx\x12[\n\
+    \x10avatar_upload_tx\x18\x07\x20\x01(\x0b21.matcha.OutputTransaction.Ava\
+    tarUploadTransactionR\x0eavatarUploadTx\x12^\n\x11favourite_post_tx\x18\
+    \x08\x20\x01(\x0b22.matcha.OutputTransaction.FavouritePostTransactionR\
+    \x0ffavouritePostTx\x1a2\n\x11NormalTransaction\x12\x1d\n\npublic_key\
+    \x18\x01\x20\x01(\x0cR\tpublicKey\x1ah\n\x17DelegateVoteTransaction\x12.\
+    \n\x13delegate_public_key\x18\x01\x20\x01(\x0cR\x11delegatePublicKey\x12\
+    \x1d\n\npublic_key\x18\x02\x20\x01(\x0cR\tpublicKey\x1a=\n\x1fUsernameRe\
+    gistrationTransaction\x12\x1a\n\x08username\x18\x01\x20\x01(\tR\x08usern\
+    ame\x1a.\n\x12NewPostTransaction\x12\x18\n\x07content\x18\x01\x20\x01(\
+    \x0cR\x07content\x1a8\n\x17AvatarUploadTransaction\x12\x1d\n\nimage_data\
+    \x18\x01\x20\x01(\x0cR\timageData\x1aP\n\x18FavouritePostTransaction\x12\
     \x13\n\x05tx_id\x18\x01\x20\x01(\x0cR\x04txId\x12\x1f\n\x0btxout_index\
-    \x18\x02\x20\x01(\rR\ntxoutIndex\x12\x1c\n\tsignature\x18\x03\x20\x01(\
-    \x0cR\tsignature\x12\x1d\n\npublic_key\x18\x04\x20\x01(\x0cR\tpublicKey\
-    \"\xd6\t\n\x11OutputTransaction\x12T\n\x10transaction_type\x18\x01\x20\
-    \x01(\x0e2).matcha.OutputTransaction.TransactionTypeR\x0ftransactionType\
-    \x12\x16\n\x06amount\x18\x02\x20\x01(\x04R\x06amount\x12H\n\tnormal_tx\
-    \x18\x03\x20\x01(\x0b2+.matcha.OutputTransaction.NormalTransactionR\x08n\
-    ormalTx\x12[\n\x10delegate_vote_tx\x18\x04\x20\x01(\x0b21.matcha.OutputT\
-    ransaction.DelegateVoteTransactionR\x0edelegateVoteTx\x12s\n\x18username\
-    _registration_tx\x18\x05\x20\x01(\x0b29.matcha.OutputTransaction.Usernam\
-    eRegistrationTransactionR\x16usernameRegistrationTx\x12L\n\x0bnew_post_t\
-    x\x18\x06\x20\x01(\x0b2,.matcha.OutputTransaction.NewPostTransactionR\tn\
-    ewPostTx\x12[\n\x10avatar_upload_tx\x18\x07\x20\x01(\x0b21.matcha.Output\
-    Transaction.AvatarUploadTransactionR\x0eavatarUploadTx\x12^\n\x11favouri\
-    te_post_tx\x18\x08\x20\x01(\x0b22.matcha.OutputTransaction.FavouritePost\
-    TransactionR\x0ffavouritePostTx\x1a2\n\x11NormalTransaction\x12\x1d\n\np\
-    ublic_key\x18\x01\x20\x01(\x0cR\tpublicKey\x1ah\n\x17DelegateVoteTransac\
-    tion\x12.\n\x13delegate_public_key\x18\x01\x20\x01(\x0cR\x11delegatePubl\
-    icKey\x12\x1d\n\npublic_key\x18\x02\x20\x01(\x0cR\tpublicKey\x1a=\n\x1fU\
-    sernameRegistrationTransaction\x12\x1a\n\x08username\x18\x01\x20\x01(\tR\
-    \x08username\x1a.\n\x12NewPostTransaction\x12\x18\n\x07content\x18\x01\
-    \x20\x01(\x0cR\x07content\x1a8\n\x17AvatarUploadTransaction\x12\x1d\n\ni\
-    mage_data\x18\x01\x20\x01(\x0cR\timageData\x1aP\n\x18FavouritePostTransa\
-    ction\x12\x13\n\x05tx_id\x18\x01\x20\x01(\x0cR\x04txId\x12\x1f\n\x0btxou\
-    t_index\x18\x02\x20\x01(\rR\ntxoutIndex\"\x92\x01\n\x0fTransactionType\
-    \x12\r\n\tNORMAL_TX\x10\0\x12\x14\n\x10DELEGATE_VOTE_TX\x10\x01\x12\x1c\
-    \n\x18USERNAME_REGISTRATION_TX\x10\x02\x12\x0f\n\x0bNEW_POST_TX\x10\x03\
-    \x12\x14\n\x10AVATAR_UPLOAD_TX\x10\x04\x12\x15\n\x11FAVOURITE_POST_TX\
-    \x10\x05\"\x80\x01\n\x0bTransaction\x12\x0e\n\x02id\x18\x01\x20\x01(\x0c\
-    R\x02id\x12.\n\x05txins\x18\x02\x20\x03(\x0b2\x18.matcha.InputTransactio\
-    nR\x05txins\x121\n\x06txouts\x18\x03\x20\x03(\x0b2\x19.matcha.OutputTran\
-    sactionR\x06txouts\"\xe7\x01\n\x05Block\x12\x18\n\x07version\x18\x01\x20\
-    \x01(\rR\x07version\x12\x1d\n\npublic_key\x18\x02\x20\x01(\x0cR\tpublicK\
-    ey\x12#\n\rprevious_hash\x18\x03\x20\x01(\x0cR\x0cpreviousHash\x12)\n\
-    \x10transaction_root\x18\x04\x20\x01(\x0cR\x0ftransactionRoot\x12\x1c\n\
-    \ttimestamp\x18\x05\x20\x01(\x04R\ttimestamp\x127\n\x0ctransactions\x18\
-    \x06\x20\x03(\x0b2\x13.matcha.TransactionR\x0ctransactions\"P\n\x0bSigne\
-    dBlock\x12\x1c\n\tsignature\x18\x01\x20\x01(\x0cR\tsignature\x12#\n\x05b\
-    lock\x18\x02\x20\x01(\x0b2\r.matcha.BlockR\x05block\"W\n\tFullBlock\x12\
-    \x12\n\x04hash\x18\x01\x20\x01(\x0cR\x04hash\x126\n\x0csigned_block\x18\
-    \x02\x20\x01(\x0b2\x13.matcha.SignedBlockR\x0bsignedBlock\"\xaf\x01\n\
-    \x07Message\x12(\n\x04type\x18\x01\x20\x01(\x0e2\x14.matcha.Message.Type\
-    R\x04type\x12)\n\x07request\x18\x02\x20\x01(\x0b2\x0f.matcha.RequestR\
-    \x07request\x12,\n\x08response\x18\x03\x20\x01(\x0b2\x10.matcha.Response\
-    R\x08response\"!\n\x04Type\x12\x0b\n\x07REQUEST\x10\0\x12\x0c\n\x08RESPO\
-    NSE\x10\x01\"\xe1\x01\n\x07Request\x12(\n\x04type\x18\x01\x20\x01(\x0e2\
-    \x14.matcha.Request.TypeR\x04type\x126\n\x0cping_request\x18\x02\x20\x01\
-    (\x0b2\x13.matcha.PingRequestR\x0bpingRequest\x12C\n\x11peer_list_reques\
-    t\x18\x03\x20\x01(\x0b2\x17.matcha.PeerListRequestR\x0fpeerListRequest\"\
-    /\n\x04Type\x12\x10\n\x0cPING_REQUEST\x10\0\x12\x15\n\x11PEER_LIST_REQUE\
-    ST\x10\x01\"\xae\x03\n\x08Response\x12/\n\x06status\x18\x01\x20\x01(\x0e\
-    2\x17.matcha.Response.StatusR\x06status\x12)\n\x04type\x18\x02\x20\x01(\
+    \x18\x02\x20\x01(\rR\ntxoutIndex\"\x92\x01\n\x0fTransactionType\x12\r\n\
+    \tNORMAL_TX\x10\0\x12\x14\n\x10DELEGATE_VOTE_TX\x10\x01\x12\x1c\n\x18USE\
+    RNAME_REGISTRATION_TX\x10\x02\x12\x0f\n\x0bNEW_POST_TX\x10\x03\x12\x14\n\
+    \x10AVATAR_UPLOAD_TX\x10\x04\x12\x15\n\x11FAVOURITE_POST_TX\x10\x05\"\
+    \x80\x01\n\x0bTransaction\x12\x0e\n\x02id\x18\x01\x20\x01(\x0cR\x02id\
+    \x12.\n\x05txins\x18\x02\x20\x03(\x0b2\x18.matcha.InputTransactionR\x05t\
+    xins\x121\n\x06txouts\x18\x03\x20\x03(\x0b2\x19.matcha.OutputTransaction\
+    R\x06txouts\"\xe7\x01\n\x05Block\x12\x18\n\x07version\x18\x01\x20\x01(\r\
+    R\x07version\x12\x1d\n\npublic_key\x18\x02\x20\x01(\x0cR\tpublicKey\x12#\
+    \n\rprevious_hash\x18\x03\x20\x01(\x0cR\x0cpreviousHash\x12)\n\x10transa\
+    ction_root\x18\x04\x20\x01(\x0cR\x0ftransactionRoot\x12\x1c\n\ttimestamp\
+    \x18\x05\x20\x01(\x04R\ttimestamp\x127\n\x0ctransactions\x18\x06\x20\x03\
+    (\x0b2\x13.matcha.TransactionR\x0ctransactions\"P\n\x0bSignedBlock\x12\
+    \x1c\n\tsignature\x18\x01\x20\x01(\x0cR\tsignature\x12#\n\x05block\x18\
+    \x02\x20\x01(\x0b2\r.matcha.BlockR\x05block\"W\n\tFullBlock\x12\x12\n\
+    \x04hash\x18\x01\x20\x01(\x0cR\x04hash\x126\n\x0csigned_block\x18\x02\
+    \x20\x01(\x0b2\x13.matcha.SignedBlockR\x0bsignedBlock\"\xaf\x01\n\x07Mes\
+    sage\x12(\n\x04type\x18\x01\x20\x01(\x0e2\x14.matcha.Message.TypeR\x04ty\
+    pe\x12)\n\x07request\x18\x02\x20\x01(\x0b2\x0f.matcha.RequestR\x07reques\
+    t\x12,\n\x08response\x18\x03\x20\x01(\x0b2\x10.matcha.ResponseR\x08respo\
+    nse\"!\n\x04Type\x12\x0b\n\x07REQUEST\x10\0\x12\x0c\n\x08RESPONSE\x10\
+    \x01\"\xe1\x01\n\x07Request\x12(\n\x04type\x18\x01\x20\x01(\x0e2\x14.mat\
+    cha.Request.TypeR\x04type\x126\n\x0cping_request\x18\x02\x20\x01(\x0b2\
+    \x13.matcha.PingRequestR\x0bpingRequest\x12C\n\x11peer_list_request\x18\
+    \x03\x20\x01(\x0b2\x17.matcha.PeerListRequestR\x0fpeerListRequest\"/\n\
+    \x04Type\x12\x10\n\x0cPING_REQUEST\x10\0\x12\x15\n\x11PEER_LIST_REQUEST\
+    \x10\x01\"\xae\x03\n\x08Response\x12/\n\x06status\x18\x01\x20\x01(\x0e2\
+    \x17.matcha.Response.StatusR\x06status\x12)\n\x04type\x18\x02\x20\x01(\
     \x0e2\x15.matcha.Response.TypeR\x04type\x12\x20\n\x0bdescription\x18\x03\
     \x20\x01(\tR\x0bdescription\x129\n\rping_response\x18\x04\x20\x01(\x0b2\
     \x14.matcha.PingResponseR\x0cpingResponse\x12F\n\x12peer_list_response\

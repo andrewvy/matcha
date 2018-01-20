@@ -10,6 +10,7 @@ message WalletKeypair {
   string name = 1;
   bytes public_key = 2;
   bytes secret_key = 3;
+  uint64 amount = 4;
 }
 
 message InputTransaction {
