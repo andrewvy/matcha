@@ -1,4 +1,4 @@
-use rust_sodium::crypto::sign::{self, PublicKey};
+use rust_sodium::crypto::sign;
 use rust_sodium::crypto::hash;
 use failure::Error;
 use hex;
@@ -27,22 +27,16 @@ impl WalletExt for Wallet {
 }
 
 pub trait WalletKeypairExt {
-    fn set_public_id_from_public_key(&mut self, public_key: PublicKey);
     fn get_public_id_struct(&self) -> Result<PublicId, Error>;
 }
 
 impl WalletKeypairExt for WalletKeypair {
-    fn set_public_id_from_public_key(&mut self, public_key: PublicKey) {
-        let public_id = hash::sha256::hash(&public_key[..]);
-        self.set_public_id(public_id.0.to_vec());
-    }
-
     fn get_public_id_struct(&self) -> Result<PublicId, Error> {
-        let public_id = self.get_public_id();
+        let public_key = self.get_public_key();
 
-        if public_id.len() == PUBLIC_ID_LEN {
-            let mut public_id_struct = PublicId([0; PUBLIC_ID_LEN]);
-            public_id_struct.0.clone_from_slice(public_id);
+        if self.get_public_key().len() == sign::PUBLICKEYBYTES {
+            let public_id = hash::sha256::hash(public_key);
+            let public_id_struct = PublicId(public_id.0);
             Ok(public_id_struct)
         } else {
             Err(format_err!("Invalid public id"))
@@ -93,7 +87,6 @@ pub fn create_new_address(name: &str) {
             let mut keypair = WalletKeypair::new();
             let (pk, sk) = sign::gen_keypair();
 
-            keypair.set_public_id_from_public_key(pk);
             keypair.set_public_key(pk.0.to_vec());
             keypair.set_secret_key(sk.0.to_vec());
             keypair.set_name(name.to_owned());
