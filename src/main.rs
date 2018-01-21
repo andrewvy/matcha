@@ -16,11 +16,13 @@ extern crate rand;
 #[macro_use] extern crate failure_derive;
 #[macro_use] extern crate serde_derive;
 
+mod constants;
 mod config;
 mod wallet;
 mod protocol;
 mod codec;
 mod node;
+mod block;
 mod transaction;
 mod matcha_pb;
 

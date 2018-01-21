@@ -84,11 +84,13 @@ message Transaction {
 }
 
 message Block {
-  uint32 version = 1;
-  bytes public_key = 2;
-  bytes previous_hash = 3;
-  bytes transaction_root = 4;
-  uint64 timestamp = 5;
+  // -- BlockHeader --
+  uint32 version = 1; // 4 bytes
+  bytes public_key = 2; // 32 bytes
+  bytes previous_hash = 3; // 32 bytes
+  bytes transaction_root = 4; // 32 bytes
+  uint64 timestamp = 5; // 8 bytes
+  // -- BlockHeader --
 
   repeated Transaction transactions = 6;
 }
