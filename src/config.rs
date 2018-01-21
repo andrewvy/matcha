@@ -6,6 +6,12 @@ use std::path::{PathBuf};
 use protobuf::{self, MessageStatic};
 use failure::Error;
 
+#[allow(dead_code)]
+pub enum Env {
+    PRODNET,
+    TESTNET,
+}
+
 pub fn get_config_dir() -> PathBuf {
     env::home_dir().unwrap().join(".config/matcha")
 }

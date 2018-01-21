@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use rust_sodium::crypto::sign::{self, PublicKey, SecretKey, Signature};
 use rust_sodium::crypto::sign::{SIGNATUREBYTES};
+use rust_sodium::crypto::hash::sha256;
 use bytes::{BytesMut, BufMut, LittleEndian};
 use failure::Error;
 
@@ -30,10 +31,11 @@ use constants;
  */
 
 const BLOCK_HEADER_SIZE: usize = 108;
+const FULL_BLOCK_HEADER_SIZE: usize = BLOCK_HEADER_SIZE + SIGNATUREBYTES;
 
 pub trait BlockExt {
     fn set_public_key_from_struct(&mut self, public_key: PublicKey);
-    fn get_block_header(&self) -> BytesMut;
+    fn get_header(&self) -> BytesMut;
     fn sign(&self, secret_key: &SecretKey) -> Result<SignedBlock, Error>;
     fn valid_header(&self) -> bool;
 }
@@ -43,8 +45,8 @@ impl BlockExt for Block {
         self.set_public_key(public_key.0.to_vec());
     }
 
-    fn get_block_header(&self) -> BytesMut {
-        let mut buffer = BytesMut::with_capacity(108);
+    fn get_header(&self) -> BytesMut {
+        let mut buffer = BytesMut::with_capacity(BLOCK_HEADER_SIZE);
 
         buffer.put_u32::<LittleEndian>(self.get_version());
         buffer.put_slice(self.get_public_key());
@@ -57,7 +59,7 @@ impl BlockExt for Block {
     fn sign(&self, secret_key: &SecretKey) -> Result<SignedBlock, Error> {
         if self.valid_header() {
             let mut signed_block = SignedBlock::new();
-            let mut header = self.get_block_header();
+            let mut header = self.get_header();
             let signature = sign::sign_detached(&mut header.take(), secret_key);
 
             signed_block.set_signature(signature.0.to_vec());
@@ -85,6 +87,8 @@ impl BlockExt for Block {
 pub trait SignedBlockExt {
     fn get_signature_struct(&self) -> Result<Signature, Error>;
     fn verify(&self, public_key: &PublicKey) -> bool;
+    fn get_header(&self) -> BytesMut;
+    fn hash(&self) -> FullBlock;
 }
 
 impl SignedBlockExt for SignedBlock {
@@ -101,15 +105,32 @@ impl SignedBlockExt for SignedBlock {
         let signature = self.get_signature_struct().expect("Invalid signature");
         let block = self.get_block();
 
-        if block.valid_header() {
-            let mut header = block.get_block_header();
+        if block.valid_header() && self.get_signature().len() == SIGNATUREBYTES {
+            let mut header = block.get_header();
             sign::verify_detached(&signature, &mut header.take(), public_key)
         } else {
             false
         }
     }
+
+    fn get_header(&self) -> BytesMut {
+        let mut header = self.get_block().get_header();
+        header.extend_from_slice(self.get_signature());
+        header
+    }
+
+    fn hash(&self) -> FullBlock {
+        let mut full_block = FullBlock::new();
+        let header = self.get_header();
+        let digest = sha256::hash(&header);
+
+        full_block.set_signed_block(self.clone());
+        full_block.set_hash(digest.0.to_vec());
+        full_block
+    }
 }
 
+#[allow(dead_code)]
 fn create_block_template() -> Block {
     let mut block = Block::new();
     let current_timestamp: u64 = SystemTime::now()
@@ -146,7 +167,7 @@ mod tests {
     #[test]
     fn can_validate_block_header() {
         let mut block = create_block_template();
-        let (public_key, secret_key) = sign::gen_keypair();
+        let (public_key, _) = sign::gen_keypair();
 
         block.set_previous_hash(vec![0; 32]);
         block.set_transaction_root(vec![0; 32]);
@@ -167,5 +188,23 @@ mod tests {
         let signed_block = block.sign(&secret_key).unwrap();
 
         assert_eq!(signed_block.verify(&public_key), true);
+    }
+
+    #[test]
+    fn can_hash_signed_block() {
+        let mut block = create_block_template();
+        let (public_key, secret_key) = sign::gen_keypair();
+
+        block.set_previous_hash(vec![0; 32]);
+        block.set_transaction_root(vec![0; 32]);
+        block.set_public_key_from_struct(public_key);
+
+        let signed_block = block.sign(&secret_key).unwrap();
+        let full_block = signed_block.hash();
+        let header = signed_block.get_header();
+        let digest = sha256::hash(&header);
+
+        assert_eq!(header.len(), FULL_BLOCK_HEADER_SIZE);
+        assert_eq!(full_block.get_hash(), digest.0);
     }
 }

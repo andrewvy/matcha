@@ -19,10 +19,10 @@ pub struct InputTransaction {
 impl InputTransaction {
     pub fn new() -> InputTransaction {
         InputTransaction {
-            tx_id: sha256::Digest([0; 32]),
+            tx_id: sha256::Digest([0; sha256::DIGESTBYTES]),
             txout_index: 0,
-            signature: sign::Signature([0; 64]),
-            public_key: sign::PublicKey([0; 32]),
+            signature: sign::Signature([0; sign::SIGNATUREBYTES]),
+            public_key: sign::PublicKey([0; sign::PUBLICKEYBYTES]),
         }
     }
 }
