@@ -53,12 +53,19 @@ fn main() {
             .about("Commands around wallet functionality")
             .setting(AppSettings::SubcommandRequiredElseHelp)
             .subcommand(
-                SubCommand::with_name("create")
-                .about("Creates a wallet")
+                SubCommand::with_name("init")
+                .about("Initializes your wallet")
+            )
+            .subcommand(
+                SubCommand::with_name("new")
+                .about("Creates a new address in your wallet")
+                .arg(
+                    Arg::with_name("address_name")
+                )
             )
             .subcommand(
                 SubCommand::with_name("list")
-                .about("Lists your wallet")
+                .about("Lists your addresses in your wallet")
             )
         );
  
@@ -85,9 +92,21 @@ fn main() {
         },
         ("wallet", Some(wallet_matches)) => {
             match wallet_matches.subcommand() {
-                ("create", _) => wallet::create_wallet(),
-                // ("list", _) => wallet::list_wallet(),
-                _ => unreachable!("No command specified!")
+                ("init", _) => wallet::init_wallet(),
+                ("list", _) => wallet::list_wallet(),
+                ("new", Some(matches)) => {
+                    match matches.value_of("address_name") {
+                        Some(name) => wallet::create_new_address(name),
+                        None => wallet::create_new_address("default"),
+                    }
+                }
+                ("new", None) => {
+                    wallet::create_new_address("default");
+                }
+                (_, matches) => {
+                    println!("{:?}", matches);
+                    unreachable!("No command specified!")
+                }
             }
         },
         ("", None) | _ => {
