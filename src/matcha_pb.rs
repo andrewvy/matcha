@@ -3854,6 +3854,7 @@ impl ::protobuf::reflect::ProtobufValue for FullBlock {
 #[derive(PartialEq,Clone,Default)]
 pub struct Message {
     // message fields
+    pub network_type: Message_NetworkType,
     pub field_type: Message_Type,
     pub request: ::protobuf::SingularPtrField<Request>,
     pub response: ::protobuf::SingularPtrField<Response>,
@@ -3880,7 +3881,30 @@ impl Message {
         }
     }
 
-    // .matcha.Message.Type type = 1;
+    // .matcha.Message.NetworkType network_type = 1;
+
+    pub fn clear_network_type(&mut self) {
+        self.network_type = Message_NetworkType::PRODNET;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_network_type(&mut self, v: Message_NetworkType) {
+        self.network_type = v;
+    }
+
+    pub fn get_network_type(&self) -> Message_NetworkType {
+        self.network_type
+    }
+
+    fn get_network_type_for_reflect(&self) -> &Message_NetworkType {
+        &self.network_type
+    }
+
+    fn mut_network_type_for_reflect(&mut self) -> &mut Message_NetworkType {
+        &mut self.network_type
+    }
+
+    // .matcha.Message.Type type = 2;
 
     pub fn clear_field_type(&mut self) {
         self.field_type = Message_Type::REQUEST;
@@ -3903,7 +3927,7 @@ impl Message {
         &mut self.field_type
     }
 
-    // .matcha.Request request = 2;
+    // .matcha.Request request = 3;
 
     pub fn clear_request(&mut self) {
         self.request.clear();
@@ -3944,7 +3968,7 @@ impl Message {
         &mut self.request
     }
 
-    // .matcha.Response response = 3;
+    // .matcha.Response response = 4;
 
     pub fn clear_response(&mut self) {
         self.response.clear();
@@ -4010,12 +4034,19 @@ impl ::protobuf::Message for Message {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
                     let tmp = is.read_enum()?;
-                    self.field_type = tmp;
+                    self.network_type = tmp;
                 },
                 2 => {
-                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.request)?;
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_enum()?;
+                    self.field_type = tmp;
                 },
                 3 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.request)?;
+                },
+                4 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.response)?;
                 },
                 _ => {
@@ -4030,8 +4061,11 @@ impl ::protobuf::Message for Message {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
+        if self.network_type != Message_NetworkType::PRODNET {
+            my_size += ::protobuf::rt::enum_size(1, self.network_type);
+        }
         if self.field_type != Message_Type::REQUEST {
-            my_size += ::protobuf::rt::enum_size(1, self.field_type);
+            my_size += ::protobuf::rt::enum_size(2, self.field_type);
         }
         if let Some(ref v) = self.request.as_ref() {
             let len = v.compute_size();
@@ -4047,16 +4081,19 @@ impl ::protobuf::Message for Message {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
+        if self.network_type != Message_NetworkType::PRODNET {
+            os.write_enum(1, self.network_type.value())?;
+        }
         if self.field_type != Message_Type::REQUEST {
-            os.write_enum(1, self.field_type.value())?;
+            os.write_enum(2, self.field_type.value())?;
         }
         if let Some(ref v) = self.request.as_ref() {
-            os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
         if let Some(ref v) = self.response.as_ref() {
-            os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
@@ -4104,6 +4141,11 @@ impl ::protobuf::MessageStatic for Message {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<Message_NetworkType>>(
+                    "network_type",
+                    Message::get_network_type_for_reflect,
+                    Message::mut_network_type_for_reflect,
+                ));
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<Message_Type>>(
                     "type",
                     Message::get_field_type_for_reflect,
@@ -4131,6 +4173,7 @@ impl ::protobuf::MessageStatic for Message {
 
 impl ::protobuf::Clear for Message {
     fn clear(&mut self) {
+        self.clear_network_type();
         self.clear_field_type();
         self.clear_request();
         self.clear_response();
@@ -4205,12 +4248,68 @@ impl ::protobuf::reflect::ProtobufValue for Message_Type {
     }
 }
 
+#[derive(Clone,PartialEq,Eq,Debug,Hash)]
+pub enum Message_NetworkType {
+    PRODNET = 0,
+    TESTNET = 1,
+}
+
+impl ::protobuf::ProtobufEnum for Message_NetworkType {
+    fn value(&self) -> i32 {
+        *self as i32
+    }
+
+    fn from_i32(value: i32) -> ::std::option::Option<Message_NetworkType> {
+        match value {
+            0 => ::std::option::Option::Some(Message_NetworkType::PRODNET),
+            1 => ::std::option::Option::Some(Message_NetworkType::TESTNET),
+            _ => ::std::option::Option::None
+        }
+    }
+
+    fn values() -> &'static [Self] {
+        static values: &'static [Message_NetworkType] = &[
+            Message_NetworkType::PRODNET,
+            Message_NetworkType::TESTNET,
+        ];
+        values
+    }
+
+    fn enum_descriptor_static(_: ::std::option::Option<Message_NetworkType>) -> &'static ::protobuf::reflect::EnumDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::EnumDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::EnumDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                ::protobuf::reflect::EnumDescriptor::new("Message_NetworkType", file_descriptor_proto())
+            })
+        }
+    }
+}
+
+impl ::std::marker::Copy for Message_NetworkType {
+}
+
+impl ::std::default::Default for Message_NetworkType {
+    fn default() -> Self {
+        Message_NetworkType::PRODNET
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Message_NetworkType {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Enum(self.descriptor())
+    }
+}
+
 #[derive(PartialEq,Clone,Default)]
 pub struct Request {
     // message fields
     pub field_type: Request_Type,
     pub ping_request: ::protobuf::SingularPtrField<PingRequest>,
     pub peer_list_request: ::protobuf::SingularPtrField<PeerListRequest>,
+    pub version_request: ::protobuf::SingularPtrField<Version>,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
     cached_size: ::protobuf::CachedSize,
@@ -4237,7 +4336,7 @@ impl Request {
     // .matcha.Request.Type type = 1;
 
     pub fn clear_field_type(&mut self) {
-        self.field_type = Request_Type::PING_REQUEST;
+        self.field_type = Request_Type::VERSION_REQUEST;
     }
 
     // Param is passed by value, moved
@@ -4338,6 +4437,47 @@ impl Request {
     fn mut_peer_list_request_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<PeerListRequest> {
         &mut self.peer_list_request
     }
+
+    // .matcha.Version version_request = 4;
+
+    pub fn clear_version_request(&mut self) {
+        self.version_request.clear();
+    }
+
+    pub fn has_version_request(&self) -> bool {
+        self.version_request.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_version_request(&mut self, v: Version) {
+        self.version_request = ::protobuf::SingularPtrField::some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_version_request(&mut self) -> &mut Version {
+        if self.version_request.is_none() {
+            self.version_request.set_default();
+        }
+        self.version_request.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_version_request(&mut self) -> Version {
+        self.version_request.take().unwrap_or_else(|| Version::new())
+    }
+
+    pub fn get_version_request(&self) -> &Version {
+        self.version_request.as_ref().unwrap_or_else(|| Version::default_instance())
+    }
+
+    fn get_version_request_for_reflect(&self) -> &::protobuf::SingularPtrField<Version> {
+        &self.version_request
+    }
+
+    fn mut_version_request_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<Version> {
+        &mut self.version_request
+    }
 }
 
 impl ::protobuf::Message for Request {
@@ -4348,6 +4488,11 @@ impl ::protobuf::Message for Request {
             }
         };
         for v in &self.peer_list_request {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
+        for v in &self.version_request {
             if !v.is_initialized() {
                 return false;
             }
@@ -4372,6 +4517,9 @@ impl ::protobuf::Message for Request {
                 3 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.peer_list_request)?;
                 },
+                4 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.version_request)?;
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -4384,7 +4532,7 @@ impl ::protobuf::Message for Request {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
-        if self.field_type != Request_Type::PING_REQUEST {
+        if self.field_type != Request_Type::VERSION_REQUEST {
             my_size += ::protobuf::rt::enum_size(1, self.field_type);
         }
         if let Some(ref v) = self.ping_request.as_ref() {
@@ -4395,13 +4543,17 @@ impl ::protobuf::Message for Request {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
+        if let Some(ref v) = self.version_request.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
-        if self.field_type != Request_Type::PING_REQUEST {
+        if self.field_type != Request_Type::VERSION_REQUEST {
             os.write_enum(1, self.field_type.value())?;
         }
         if let Some(ref v) = self.ping_request.as_ref() {
@@ -4411,6 +4563,11 @@ impl ::protobuf::Message for Request {
         }
         if let Some(ref v) = self.peer_list_request.as_ref() {
             os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
+        }
+        if let Some(ref v) = self.version_request.as_ref() {
+            os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
@@ -4473,6 +4630,11 @@ impl ::protobuf::MessageStatic for Request {
                     Request::get_peer_list_request_for_reflect,
                     Request::mut_peer_list_request_for_reflect,
                 ));
+                fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Version>>(
+                    "version_request",
+                    Request::get_version_request_for_reflect,
+                    Request::mut_version_request_for_reflect,
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<Request>(
                     "Request",
                     fields,
@@ -4488,6 +4650,7 @@ impl ::protobuf::Clear for Request {
         self.clear_field_type();
         self.clear_ping_request();
         self.clear_peer_list_request();
+        self.clear_version_request();
         self.unknown_fields.clear();
     }
 }
@@ -4506,8 +4669,9 @@ impl ::protobuf::reflect::ProtobufValue for Request {
 
 #[derive(Clone,PartialEq,Eq,Debug,Hash)]
 pub enum Request_Type {
-    PING_REQUEST = 0,
-    PEER_LIST_REQUEST = 1,
+    VERSION_REQUEST = 0,
+    PING_REQUEST = 1,
+    PEER_LIST_REQUEST = 2,
 }
 
 impl ::protobuf::ProtobufEnum for Request_Type {
@@ -4517,14 +4681,16 @@ impl ::protobuf::ProtobufEnum for Request_Type {
 
     fn from_i32(value: i32) -> ::std::option::Option<Request_Type> {
         match value {
-            0 => ::std::option::Option::Some(Request_Type::PING_REQUEST),
-            1 => ::std::option::Option::Some(Request_Type::PEER_LIST_REQUEST),
+            0 => ::std::option::Option::Some(Request_Type::VERSION_REQUEST),
+            1 => ::std::option::Option::Some(Request_Type::PING_REQUEST),
+            2 => ::std::option::Option::Some(Request_Type::PEER_LIST_REQUEST),
             _ => ::std::option::Option::None
         }
     }
 
     fn values() -> &'static [Self] {
         static values: &'static [Request_Type] = &[
+            Request_Type::VERSION_REQUEST,
             Request_Type::PING_REQUEST,
             Request_Type::PEER_LIST_REQUEST,
         ];
@@ -4549,7 +4715,7 @@ impl ::std::marker::Copy for Request_Type {
 
 impl ::std::default::Default for Request_Type {
     fn default() -> Self {
-        Request_Type::PING_REQUEST
+        Request_Type::VERSION_REQUEST
     }
 }
 
@@ -4567,6 +4733,7 @@ pub struct Response {
     pub description: ::std::string::String,
     pub ping_response: ::protobuf::SingularPtrField<PingResponse>,
     pub peer_list_response: ::protobuf::SingularPtrField<PeerListResponse>,
+    pub version_response: ::protobuf::SingularPtrField<Version>,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
     cached_size: ::protobuf::CachedSize,
@@ -4751,6 +4918,47 @@ impl Response {
     fn mut_peer_list_response_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<PeerListResponse> {
         &mut self.peer_list_response
     }
+
+    // .matcha.Version version_response = 6;
+
+    pub fn clear_version_response(&mut self) {
+        self.version_response.clear();
+    }
+
+    pub fn has_version_response(&self) -> bool {
+        self.version_response.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_version_response(&mut self, v: Version) {
+        self.version_response = ::protobuf::SingularPtrField::some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_version_response(&mut self) -> &mut Version {
+        if self.version_response.is_none() {
+            self.version_response.set_default();
+        }
+        self.version_response.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_version_response(&mut self) -> Version {
+        self.version_response.take().unwrap_or_else(|| Version::new())
+    }
+
+    pub fn get_version_response(&self) -> &Version {
+        self.version_response.as_ref().unwrap_or_else(|| Version::default_instance())
+    }
+
+    fn get_version_response_for_reflect(&self) -> &::protobuf::SingularPtrField<Version> {
+        &self.version_response
+    }
+
+    fn mut_version_response_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<Version> {
+        &mut self.version_response
+    }
 }
 
 impl ::protobuf::Message for Response {
@@ -4761,6 +4969,11 @@ impl ::protobuf::Message for Response {
             }
         };
         for v in &self.peer_list_response {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
+        for v in &self.version_response {
             if !v.is_initialized() {
                 return false;
             }
@@ -4795,6 +5008,9 @@ impl ::protobuf::Message for Response {
                 5 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.peer_list_response)?;
                 },
+                6 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.version_response)?;
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -4824,6 +5040,10 @@ impl ::protobuf::Message for Response {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
+        if let Some(ref v) = self.version_response.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -4846,6 +5066,11 @@ impl ::protobuf::Message for Response {
         }
         if let Some(ref v) = self.peer_list_response.as_ref() {
             os.write_tag(5, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
+        }
+        if let Some(ref v) = self.version_response.as_ref() {
+            os.write_tag(6, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
@@ -4918,6 +5143,11 @@ impl ::protobuf::MessageStatic for Response {
                     Response::get_peer_list_response_for_reflect,
                     Response::mut_peer_list_response_for_reflect,
                 ));
+                fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Version>>(
+                    "version_response",
+                    Response::get_version_response_for_reflect,
+                    Response::mut_version_response_for_reflect,
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<Response>(
                     "Response",
                     fields,
@@ -4935,6 +5165,7 @@ impl ::protobuf::Clear for Response {
         self.clear_description();
         self.clear_ping_response();
         self.clear_peer_list_response();
+        self.clear_version_response();
         self.unknown_fields.clear();
     }
 }
@@ -5015,8 +5246,9 @@ impl ::protobuf::reflect::ProtobufValue for Response_Status {
 #[derive(Clone,PartialEq,Eq,Debug,Hash)]
 pub enum Response_Type {
     DESCRIPTION_ONLY = 0,
-    PING_RESPONSE = 1,
-    PEER_LIST_RESPONSE = 2,
+    VERSION_RESPONSE = 1,
+    PING_RESPONSE = 2,
+    PEER_LIST_RESPONSE = 3,
 }
 
 impl ::protobuf::ProtobufEnum for Response_Type {
@@ -5027,8 +5259,9 @@ impl ::protobuf::ProtobufEnum for Response_Type {
     fn from_i32(value: i32) -> ::std::option::Option<Response_Type> {
         match value {
             0 => ::std::option::Option::Some(Response_Type::DESCRIPTION_ONLY),
-            1 => ::std::option::Option::Some(Response_Type::PING_RESPONSE),
-            2 => ::std::option::Option::Some(Response_Type::PEER_LIST_RESPONSE),
+            1 => ::std::option::Option::Some(Response_Type::VERSION_RESPONSE),
+            2 => ::std::option::Option::Some(Response_Type::PING_RESPONSE),
+            3 => ::std::option::Option::Some(Response_Type::PEER_LIST_RESPONSE),
             _ => ::std::option::Option::None
         }
     }
@@ -5036,6 +5269,7 @@ impl ::protobuf::ProtobufEnum for Response_Type {
     fn values() -> &'static [Self] {
         static values: &'static [Response_Type] = &[
             Response_Type::DESCRIPTION_ONLY,
+            Response_Type::VERSION_RESPONSE,
             Response_Type::PING_RESPONSE,
             Response_Type::PEER_LIST_RESPONSE,
         ];
@@ -5067,6 +5301,218 @@ impl ::std::default::Default for Response_Type {
 impl ::protobuf::reflect::ProtobufValue for Response_Type {
     fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
         ::protobuf::reflect::ProtobufValueRef::Enum(self.descriptor())
+    }
+}
+
+#[derive(PartialEq,Clone,Default)]
+pub struct Version {
+    // message fields
+    pub version_number: u32,
+    pub timestamp: u64,
+    // special fields
+    unknown_fields: ::protobuf::UnknownFields,
+    cached_size: ::protobuf::CachedSize,
+}
+
+// see codegen.rs for the explanation why impl Sync explicitly
+unsafe impl ::std::marker::Sync for Version {}
+
+impl Version {
+    pub fn new() -> Version {
+        ::std::default::Default::default()
+    }
+
+    pub fn default_instance() -> &'static Version {
+        static mut instance: ::protobuf::lazy::Lazy<Version> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const Version,
+        };
+        unsafe {
+            instance.get(Version::new)
+        }
+    }
+
+    // uint32 version_number = 1;
+
+    pub fn clear_version_number(&mut self) {
+        self.version_number = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_version_number(&mut self, v: u32) {
+        self.version_number = v;
+    }
+
+    pub fn get_version_number(&self) -> u32 {
+        self.version_number
+    }
+
+    fn get_version_number_for_reflect(&self) -> &u32 {
+        &self.version_number
+    }
+
+    fn mut_version_number_for_reflect(&mut self) -> &mut u32 {
+        &mut self.version_number
+    }
+
+    // uint64 timestamp = 2;
+
+    pub fn clear_timestamp(&mut self) {
+        self.timestamp = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_timestamp(&mut self, v: u64) {
+        self.timestamp = v;
+    }
+
+    pub fn get_timestamp(&self) -> u64 {
+        self.timestamp
+    }
+
+    fn get_timestamp_for_reflect(&self) -> &u64 {
+        &self.timestamp
+    }
+
+    fn mut_timestamp_for_reflect(&mut self) -> &mut u64 {
+        &mut self.timestamp
+    }
+}
+
+impl ::protobuf::Message for Version {
+    fn is_initialized(&self) -> bool {
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.version_number = tmp;
+                },
+                2 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint64()?;
+                    self.timestamp = tmp;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if self.version_number != 0 {
+            my_size += ::protobuf::rt::value_size(1, self.version_number, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if self.timestamp != 0 {
+            my_size += ::protobuf::rt::value_size(2, self.timestamp, ::protobuf::wire_format::WireTypeVarint);
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
+        if self.version_number != 0 {
+            os.write_uint32(1, self.version_number)?;
+        }
+        if self.timestamp != 0 {
+            os.write_uint64(2, self.timestamp)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &::std::any::Any {
+        self as &::std::any::Any
+    }
+    fn as_any_mut(&mut self) -> &mut ::std::any::Any {
+        self as &mut ::std::any::Any
+    }
+    fn into_any(self: Box<Self>) -> ::std::boxed::Box<::std::any::Any> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        ::protobuf::MessageStatic::descriptor_static(None::<Self>)
+    }
+}
+
+impl ::protobuf::MessageStatic for Version {
+    fn new() -> Version {
+        Version::new()
+    }
+
+    fn descriptor_static(_: ::std::option::Option<Version>) -> &'static ::protobuf::reflect::MessageDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                    "version_number",
+                    Version::get_version_number_for_reflect,
+                    Version::mut_version_number_for_reflect,
+                ));
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint64>(
+                    "timestamp",
+                    Version::get_timestamp_for_reflect,
+                    Version::mut_timestamp_for_reflect,
+                ));
+                ::protobuf::reflect::MessageDescriptor::new::<Version>(
+                    "Version",
+                    fields,
+                    file_descriptor_proto()
+                )
+            })
+        }
+    }
+}
+
+impl ::protobuf::Clear for Version {
+    fn clear(&mut self) {
+        self.clear_version_number();
+        self.clear_timestamp();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for Version {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Version {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Message(self)
     }
 }
 
@@ -6240,34 +6686,41 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x1c\n\tsignature\x18\x01\x20\x01(\x0cR\tsignature\x12#\n\x05block\x18\
     \x02\x20\x01(\x0b2\r.matcha.BlockR\x05block\"W\n\tFullBlock\x12\x12\n\
     \x04hash\x18\x01\x20\x01(\x0cR\x04hash\x126\n\x0csigned_block\x18\x02\
-    \x20\x01(\x0b2\x13.matcha.SignedBlockR\x0bsignedBlock\"\xaf\x01\n\x07Mes\
-    sage\x12(\n\x04type\x18\x01\x20\x01(\x0e2\x14.matcha.Message.TypeR\x04ty\
-    pe\x12)\n\x07request\x18\x02\x20\x01(\x0b2\x0f.matcha.RequestR\x07reques\
-    t\x12,\n\x08response\x18\x03\x20\x01(\x0b2\x10.matcha.ResponseR\x08respo\
-    nse\"!\n\x04Type\x12\x0b\n\x07REQUEST\x10\0\x12\x0c\n\x08RESPONSE\x10\
-    \x01\"\xe1\x01\n\x07Request\x12(\n\x04type\x18\x01\x20\x01(\x0e2\x14.mat\
-    cha.Request.TypeR\x04type\x126\n\x0cping_request\x18\x02\x20\x01(\x0b2\
-    \x13.matcha.PingRequestR\x0bpingRequest\x12C\n\x11peer_list_request\x18\
-    \x03\x20\x01(\x0b2\x17.matcha.PeerListRequestR\x0fpeerListRequest\"/\n\
-    \x04Type\x12\x10\n\x0cPING_REQUEST\x10\0\x12\x15\n\x11PEER_LIST_REQUEST\
-    \x10\x01\"\xae\x03\n\x08Response\x12/\n\x06status\x18\x01\x20\x01(\x0e2\
-    \x17.matcha.Response.StatusR\x06status\x12)\n\x04type\x18\x02\x20\x01(\
+    \x20\x01(\x0b2\x13.matcha.SignedBlockR\x0bsignedBlock\"\x98\x02\n\x07Mes\
+    sage\x12>\n\x0cnetwork_type\x18\x01\x20\x01(\x0e2\x1b.matcha.Message.Net\
+    workTypeR\x0bnetworkType\x12(\n\x04type\x18\x02\x20\x01(\x0e2\x14.matcha\
+    .Message.TypeR\x04type\x12)\n\x07request\x18\x03\x20\x01(\x0b2\x0f.match\
+    a.RequestR\x07request\x12,\n\x08response\x18\x04\x20\x01(\x0b2\x10.match\
+    a.ResponseR\x08response\"!\n\x04Type\x12\x0b\n\x07REQUEST\x10\0\x12\x0c\
+    \n\x08RESPONSE\x10\x01\"'\n\x0bNetworkType\x12\x0b\n\x07PRODNET\x10\0\
+    \x12\x0b\n\x07TESTNET\x10\x01\"\xb0\x02\n\x07Request\x12(\n\x04type\x18\
+    \x01\x20\x01(\x0e2\x14.matcha.Request.TypeR\x04type\x126\n\x0cping_reque\
+    st\x18\x02\x20\x01(\x0b2\x13.matcha.PingRequestR\x0bpingRequest\x12C\n\
+    \x11peer_list_request\x18\x03\x20\x01(\x0b2\x17.matcha.PeerListRequestR\
+    \x0fpeerListRequest\x128\n\x0fversion_request\x18\x04\x20\x01(\x0b2\x0f.\
+    matcha.VersionR\x0eversionRequest\"D\n\x04Type\x12\x13\n\x0fVERSION_REQU\
+    EST\x10\0\x12\x10\n\x0cPING_REQUEST\x10\x01\x12\x15\n\x11PEER_LIST_REQUE\
+    ST\x10\x02\"\x80\x04\n\x08Response\x12/\n\x06status\x18\x01\x20\x01(\x0e\
+    2\x17.matcha.Response.StatusR\x06status\x12)\n\x04type\x18\x02\x20\x01(\
     \x0e2\x15.matcha.Response.TypeR\x04type\x12\x20\n\x0bdescription\x18\x03\
     \x20\x01(\tR\x0bdescription\x129\n\rping_response\x18\x04\x20\x01(\x0b2\
     \x14.matcha.PingResponseR\x0cpingResponse\x12F\n\x12peer_list_response\
     \x18\x05\x20\x01(\x0b2\x18.matcha.PeerListResponseR\x10peerListResponse\
-    \"X\n\x06Status\x12\x13\n\x0fINVALID_REQUEST\x10\0\x12\x07\n\x03ACK\x10\
-    \x01\x12\x15\n\x11TOO_MANY_REQUESTS\x10\x02\x12\x19\n\x15INTERNAL_SERVER\
-    _ERROR\x10\x03\"G\n\x04Type\x12\x14\n\x10DESCRIPTION_ONLY\x10\0\x12\x11\
-    \n\rPING_RESPONSE\x10\x01\x12\x16\n\x12PEER_LIST_RESPONSE\x10\x02\"\x1a\
-    \n\x04Peer\x12\x12\n\x04addr\x18\x02\x20\x01(\tR\x04addr\".\n\x08PeerLis\
-    t\x12\"\n\x05peers\x18\x01\x20\x03(\x0b2\x0c.matcha.PeerR\x05peers\"/\n\
-    \x0bPingRequest\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\
-    \x04peer\"0\n\x0cPingResponse\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\
-    \x0c.matcha.PeerR\x04peer\"@\n\x0fPeerListRequest\x12-\n\tpeer_list\x18\
-    \x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08peerList\"A\n\x10PeerListResp\
-    onse\x12-\n\tpeer_list\x18\x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08pee\
-    rListb\x06proto3\
+    \x12:\n\x10version_response\x18\x06\x20\x01(\x0b2\x0f.matcha.VersionR\
+    \x0fversionResponse\"X\n\x06Status\x12\x13\n\x0fINVALID_REQUEST\x10\0\
+    \x12\x07\n\x03ACK\x10\x01\x12\x15\n\x11TOO_MANY_REQUESTS\x10\x02\x12\x19\
+    \n\x15INTERNAL_SERVER_ERROR\x10\x03\"]\n\x04Type\x12\x14\n\x10DESCRIPTIO\
+    N_ONLY\x10\0\x12\x14\n\x10VERSION_RESPONSE\x10\x01\x12\x11\n\rPING_RESPO\
+    NSE\x10\x02\x12\x16\n\x12PEER_LIST_RESPONSE\x10\x03\"N\n\x07Version\x12%\
+    \n\x0eversion_number\x18\x01\x20\x01(\rR\rversionNumber\x12\x1c\n\ttimes\
+    tamp\x18\x02\x20\x01(\x04R\ttimestamp\"\x1a\n\x04Peer\x12\x12\n\x04addr\
+    \x18\x02\x20\x01(\tR\x04addr\".\n\x08PeerList\x12\"\n\x05peers\x18\x01\
+    \x20\x03(\x0b2\x0c.matcha.PeerR\x05peers\"/\n\x0bPingRequest\x12\x20\n\
+    \x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"0\n\x0cPingResp\
+    onse\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"@\
+    \n\x0fPeerListRequest\x12-\n\tpeer_list\x18\x01\x20\x01(\x0b2\x10.matcha\
+    .PeerListR\x08peerList\"A\n\x10PeerListResponse\x12-\n\tpeer_list\x18\
+    \x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08peerListb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

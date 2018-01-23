@@ -117,21 +117,29 @@ message Message {
     RESPONSE = 1;
   }
 
-  Type type = 1;
-  Request request = 2;
-  Response response = 3;
+  enum NetworkType {
+    PRODNET = 0;
+    TESTNET = 1;
+  }
+
+  NetworkType network_type = 1;
+  Type type = 2;
+  Request request = 3;
+  Response response = 4;
 }
 
 message Request {
   enum Type {
-    PING_REQUEST = 0;
-    PEER_LIST_REQUEST = 1;
+    VERSION_REQUEST = 0;
+    PING_REQUEST = 1;
+    PEER_LIST_REQUEST = 2;
   }
 
   Type type = 1;
 
   PingRequest ping_request = 2;
   PeerListRequest peer_list_request = 3;
+  Version version_request = 4;
 }
 
 message Response {
@@ -144,8 +152,9 @@ message Response {
 
   enum Type {
     DESCRIPTION_ONLY = 0;
-    PING_RESPONSE = 1;
-    PEER_LIST_RESPONSE = 2;
+    VERSION_RESPONSE = 1;
+    PING_RESPONSE = 2;
+    PEER_LIST_RESPONSE = 3;
   }
 
   Status status = 1;
@@ -154,6 +163,12 @@ message Response {
 
   PingResponse ping_response = 4;
   PeerListResponse peer_list_response = 5;
+  Version version_response = 6;
+}
+
+message Version {
+  uint32 version_number = 1;
+  uint64 timestamp = 2;
 }
 
 message Peer {
