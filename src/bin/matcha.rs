@@ -1,30 +1,9 @@
 extern crate clap;
-extern crate bytes;
-extern crate byteorder;
-extern crate futures;
-extern crate tokio_io;
-extern crate tokio_core;
-extern crate tokio_timer;
-extern crate rust_sodium;
-extern crate hex;
-extern crate serde;
-extern crate protobuf;
-extern crate uuid;
-extern crate rand;
+extern crate matcha;
 
-#[macro_use] extern crate failure;
-#[macro_use] extern crate failure_derive;
-#[macro_use] extern crate serde_derive;
-
-mod constants;
-mod config;
-mod wallet;
-mod protocol;
-mod codec;
-mod node;
-mod block;
-mod transaction;
-mod matcha_pb;
+use matcha::wallet;
+use matcha::node;
+use matcha::config;
 
 use clap::{App, Arg, SubCommand, AppSettings};
 
