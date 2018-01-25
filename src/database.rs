@@ -2,10 +2,12 @@ use rocksdb::{Error, DB, DBVector};
 
 use config;
 
+#[allow(dead_code)]
 struct Database {
     connection: DB
 }
 
+#[allow(dead_code)]
 impl Database {
     fn new() -> Database {
         let database_path = config::get_config_dir().join("db");

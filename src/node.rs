@@ -51,6 +51,7 @@ struct Peer {
     pub version: Option<matcha_pb::Version>
 }
 
+#[allow(dead_code)]
 impl Peer {
     fn has_negotiated(&self) -> bool {
         self.version != None

@@ -8,6 +8,7 @@ use failure::Error;
 
 use matcha_pb::{Block, SignedBlock, FullBlock};
 use constants;
+use transaction::TransactionExtension;
 
 /*
  * Hashing:
@@ -90,6 +91,7 @@ pub trait SignedBlockExt {
     fn get_signature_struct(&self) -> Result<Signature, Error>;
     fn verify(&self, public_key: &PublicKey) -> bool;
     fn get_header(&self) -> BytesMut;
+    fn compute_hash(&self) -> sha256::Digest;
     fn hash(&self) -> FullBlock;
 }
 
@@ -121,14 +123,73 @@ impl SignedBlockExt for SignedBlock {
         header
     }
 
+    fn compute_hash(&self) -> sha256::Digest {
+        let header = self.get_header();
+        sha256::hash(&header)
+    }
+
     fn hash(&self) -> FullBlock {
         let mut full_block = FullBlock::new();
-        let header = self.get_header();
-        let digest = sha256::hash(&header);
+        let digest = self.compute_hash();
 
         full_block.set_signed_block(self.clone());
         full_block.set_hash(digest.0.to_vec());
         full_block
+    }
+}
+
+pub trait FullBlockExt {
+    fn is_valid(&self) -> bool;
+    fn witness_signature_is_valid(&self) -> bool;
+    fn transactions_are_valid(&self) -> bool;
+    fn transaction_root_is_valid(&self) -> bool;
+    fn block_hash_is_valid(&self) -> bool;
+}
+
+impl FullBlockExt for FullBlock {
+    /*
+     * A FullBlock is valid if all these conditions are true:
+     * - Signed by a valid witness in their respective production timeslot.
+     * - All transactions are valid
+     * - Transaction root hash is valid
+     * - Hash of the block is valid
+     * - First transaction is a coinbase transaction, which contains reward, left over fees, and maintenance fees
+     */
+
+    fn is_valid(&self) -> bool {
+        return self.witness_signature_is_valid() &&
+            self.transactions_are_valid() &&
+            self.transaction_root_is_valid() &&
+            self.block_hash_is_valid();
+    }
+
+    fn witness_signature_is_valid(&self) -> bool {
+        // @TODO(vy): Add in real witness validation here, by taking into account all voted
+        // delegates.
+        true
+    }
+
+    fn transactions_are_valid(&self) -> bool {
+        let block = self.get_signed_block().get_block();
+        let transactions = block.get_transactions();
+
+        transactions.into_iter().all(|transaction| {
+            transaction.is_valid()
+        })
+    }
+
+    fn transaction_root_is_valid(&self) -> bool {
+        // @TODO(vy): Create a merkle tree using transaction hashes to verify transaction root
+        // hash.
+        true
+    }
+
+    fn block_hash_is_valid(&self) -> bool {
+        let signed_block = self.get_signed_block();
+        let block_hash = self.get_hash();
+        let digest = signed_block.compute_hash();
+
+        block_hash == digest.0
     }
 }
 
@@ -208,5 +269,20 @@ mod tests {
 
         assert_eq!(header.len(), FULL_BLOCK_HEADER_SIZE);
         assert_eq!(full_block.get_hash(), digest.0);
+    }
+
+    #[test]
+    fn can_validate_full_blocks() {
+        let mut block = create_block_template();
+        let (public_key, secret_key) = sign::gen_keypair();
+
+        block.set_previous_hash(vec![0; 32]);
+        block.set_transaction_root(vec![0; 32]);
+        block.set_public_key_from_struct(public_key);
+
+        let signed_block = block.sign(&secret_key).unwrap();
+        let full_block = signed_block.hash();
+
+        assert_eq!(full_block.is_valid(), true);
     }
 }

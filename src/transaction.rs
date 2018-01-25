@@ -4,47 +4,57 @@ use bytes::BytesMut;
 #[allow(unused_imports)]
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 
+use matcha_pb::Transaction;
 
-use protocol::Transaction;
-
+/*
+ * A transaction is valid if all these conditions are true:
+ * - InputTransactions must reference unspent OutputTransactions (UTXOs, unspect transaction outputs)
+ * - The InputTransactions total amount must be greater or equal to the output money
+ * - Number of InputTransactions must be greater than 0
+ * - Number of OutputTransactions must be greater than 0
+ */
 
 pub trait TransactionExtension {
     fn to_hash(&self) -> sha256::Digest;
+    fn is_valid(&self) -> bool;
 }
 
 impl TransactionExtension for Transaction {
     fn to_hash(&self) -> sha256::Digest {
         let mut buffer = BytesMut::new();
 
-        buffer.extend_from_slice(&self.id.0);
+        buffer.extend_from_slice(self.get_id());
 
-        self.txins.iter().for_each(|txin| {
-            buffer.extend_from_slice(&txin.tx_id.0);
+        self.get_txins().iter().for_each(|txin| {
+            buffer.extend_from_slice(&txin.get_tx_id());
 
             let mut wtr = vec![];
-            wtr.write_u32::<LittleEndian>(txin.txout_index).unwrap();
+            wtr.write_u32::<LittleEndian>(txin.get_txout_index()).unwrap();
             buffer.extend_from_slice(wtr.as_slice());
 
-            buffer.extend_from_slice(&txin.signature.0);
-            buffer.extend_from_slice(&txin.public_key.0);
+            buffer.extend_from_slice(&txin.get_signature());
+            buffer.extend_from_slice(&txin.get_public_key());
         });
 
-        self.txouts.iter().for_each(|txout| {
+        self.get_txouts().iter().for_each(|txout| {
             let mut wtr = vec![];
-            wtr.write_u64::<LittleEndian>(txout.amount).unwrap();
+            wtr.write_u64::<LittleEndian>(txout.get_amount()).unwrap();
             buffer.extend_from_slice(wtr.as_slice());
-
-            buffer.extend_from_slice(&txout.public_key.0);
+            buffer.extend_from_slice(&[0; 32]);
         });
 
         sha256::hash(buffer.to_vec().as_slice())
+    }
+
+    fn is_valid(&self) -> bool {
+        true
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use protocol::InputTransaction;
+    use matcha_pb::InputTransaction;
     use hex;
 
     #[test]
@@ -54,7 +64,7 @@ mod tests {
 
         assert_eq!(
           hex::encode(transaction.to_hash()),
-          "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+          "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         );
     }
 
@@ -67,7 +77,7 @@ mod tests {
 
         assert_eq!(
           hex::encode(transaction.to_hash()),
-          "4b22ee6807a2e4ddfd1bf16851609a7a009f4c6bd5aeb78162f121cb89492f02"
+          "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
         );
     }
 }

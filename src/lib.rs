@@ -24,6 +24,5 @@ pub mod constants;
 pub mod database;
 pub mod matcha_pb;
 pub mod node;
-pub mod protocol;
 pub mod transaction;
 pub mod wallet;
