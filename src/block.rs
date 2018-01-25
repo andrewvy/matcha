@@ -31,6 +31,8 @@ use constants;
  */
 
 const BLOCK_HEADER_SIZE: usize = 108;
+
+#[allow(dead_code)]
 const FULL_BLOCK_HEADER_SIZE: usize = BLOCK_HEADER_SIZE + SIGNATUREBYTES;
 
 pub trait BlockExt {
