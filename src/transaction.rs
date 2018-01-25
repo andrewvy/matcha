@@ -17,6 +17,10 @@ use matcha_pb::Transaction;
 pub trait TransactionExtension {
     fn to_hash(&self) -> sha256::Digest;
     fn is_valid(&self) -> bool;
+    fn txins_are_valid(&self) -> bool;
+    fn txouts_are_valid(&self) -> bool;
+    fn txins_reference_unspent_txouts(&self) -> bool;
+    fn amount_transfer_is_valid(&self) -> bool;
 }
 
 impl TransactionExtension for Transaction {
@@ -47,7 +51,42 @@ impl TransactionExtension for Transaction {
     }
 
     fn is_valid(&self) -> bool {
-        true
+        return self.get_txins().len() > 0 &&
+            self.get_txouts().len() > 0 &&
+            self.txins_are_valid() &&
+            self.txouts_are_valid() &&
+            self.amount_transfer_is_valid();
+    }
+
+    fn txins_are_valid(&self) -> bool {
+        // @todo(vy): txins must reference UTXOs, and their signature
+        // must be valid for the matched public key.
+        return self.txins_reference_unspent_txouts();
+    }
+
+    fn txouts_are_valid(&self) -> bool {
+        // @todo(vy): Depending on type of txout, that txout may
+        // undergo extra validation.
+        //
+        // Username is ASCII, alphanumeric. 30 chars max.
+        // NewPostTransaction must be 140 codepoints, NFC-normalized
+        return true;
+    }
+
+    fn txins_reference_unspent_txouts(&self) -> bool {
+        //@todo(vy): For all txins, look up txin->txid in our UTXO cache,
+        // if found and pubkey matches, then txin is valid.
+        return true;
+    }
+
+    fn amount_transfer_is_valid(&self) -> bool {
+        let _ = self.get_txins();
+        let _ = self.get_txouts();
+
+        // @todo(vy): For all txins, get the amounts from their referenced UTXOs.
+        // The sum of this input money must be greater or equal to the sum of the txouts.
+
+        return true;
     }
 }
 
