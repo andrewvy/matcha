@@ -1,4 +1,6 @@
-use rocksdb::{Error, DB, DBVector};
+use rocksdb::{DB, DBVector};
+use protobuf::{self, MessageStatic};
+use failure::Error;
 
 use config;
 
@@ -19,11 +21,36 @@ impl Database {
     }
 
     fn put(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
-        self.connection.put(key, value)
+        self.connection.put(key, value).map_err(|e| { format_err!("An error occured: {}", e) })
     }
 
     fn get(&self, key: &[u8]) -> Result<Option<DBVector>, Error> {
-        self.connection.get(key)
+        self.connection.get(key).map_err(|e| { format_err!("An error occured: {}", e) })
+    }
+
+    fn put_proto<T: MessageStatic>(&self, msg: &T, key: &[u8]) -> Result<(), Error> {
+        match msg.write_to_bytes() {
+            Ok(buf) => {
+                match self.put(key, buf.as_slice()) {
+                    Ok(_) => Ok(()),
+                    Err(e) => Err(format_err!("An error occured: {}", e)),
+                }
+            },
+            Err(e) => Err(format_err!("An error occured: {}", e)),
+        }
+    }
+
+    fn get_proto<T: MessageStatic>(&self, key: &[u8]) -> Result<Option<T>, Error> {
+        match self.get(key) {
+            Ok(Some(value)) => {
+                match protobuf::parse_from_bytes(value.as_ref()) {
+                    Ok(msg) => Ok(Some(msg)),
+                    Err(e) => Err(format_err!("An error occured: {}", e)),
+                }
+            }
+            Ok(None) => Ok(None),
+            Err(e) => Err(format_err!("An error occured: {}", e)),
+        }
     }
 }
 

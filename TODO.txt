@@ -1,0 +1,14 @@
+Things for functional demo:
+
+Real Core:
+- Add database storage (20%)
+- Add a transaction mempool
+- Add transaction validation
+- Add block validation
+- Block broadcasting
+
+- Add CLI flag to specify testnet/prodnet
+
+- Add RPC Server listener/handler on the daemon-side
+- Create JSON-RPC CLI client
+- Think about consensus protocol (90%)
