@@ -2,6 +2,7 @@ extern crate clap;
 extern crate bytes;
 extern crate byteorder;
 extern crate futures;
+extern crate tempdir;
 extern crate tokio_io;
 extern crate tokio_core;
 extern crate tokio_timer;

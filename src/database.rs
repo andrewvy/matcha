@@ -1,7 +1,12 @@
+use std::path::Path;
+
+use rust_sodium::crypto::hash;
 use rocksdb::{DB, DBVector};
-use protobuf::{self, MessageStatic};
 use failure::Error;
 
+use protobuf::{self, MessageStatic};
+use matcha_pb::{Transaction, FullBlock};
+use transaction::TransactionExt;
 use config;
 
 #[allow(dead_code)]
@@ -9,11 +14,21 @@ struct Database {
     connection: DB
 }
 
+const KEY_LEN: usize = hash::sha256::DIGESTBYTES + 1;
+
 #[allow(dead_code)]
 impl Database {
     fn new() -> Database {
         let database_path = config::get_config_dir().join("db");
         let db = DB::open_default(database_path).unwrap();
+
+        Database {
+            connection: db
+        }
+    }
+
+    fn new_from_path(path: &Path) -> Database {
+        let db = DB::open_default(path).unwrap();
 
         Database {
             connection: db
@@ -28,10 +43,12 @@ impl Database {
         self.connection.get(key).map_err(|e| { format_err!("An error occured: {}", e) })
     }
 
-    fn put_proto<T: MessageStatic>(&self, msg: &T, key: &[u8]) -> Result<(), Error> {
+    fn put_proto<T: MessageStatic + Storeable>(&self, msg: &T) -> Result<(), Error> {
+        let key = msg.get_key();
+
         match msg.write_to_bytes() {
             Ok(buf) => {
-                match self.put(key, buf.as_slice()) {
+                match self.put(key.as_slice(), buf.as_slice()) {
                     Ok(_) => Ok(()),
                     Err(e) => Err(format_err!("An error occured: {}", e)),
                 }
@@ -54,15 +71,58 @@ impl Database {
     }
 }
 
+pub trait Storeable {
+    fn get_key_prefix(&self) -> u8;
+    fn get_key(&self) -> Vec<u8>;
+}
+
+impl Storeable for FullBlock {
+    fn get_key_prefix(&self) -> u8 {
+        'b' as u8
+    }
+
+    fn get_key(&self) -> Vec<u8> {
+        let mut key = Vec::with_capacity(KEY_LEN);
+        let hash = self.get_hash();
+
+        key.push(self.get_key_prefix());
+        key.extend_from_slice(hash.as_ref());
+
+        key
+    }
+}
+
+impl Storeable for Transaction {
+    fn get_key_prefix(&self) -> u8 {
+        't' as u8
+    }
+
+    fn get_key(&self) -> Vec<u8> {
+        let mut key = Vec::with_capacity(KEY_LEN);
+        let hash = self.to_hash();
+
+        key.push(self.get_key_prefix());
+        key.extend_from_slice(hash.as_ref());
+
+        key
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempdir::TempDir;
+    use matcha_pb::{OutputTransaction, OutputTransaction_TransactionType};
+
+    fn create_test_database() -> Database {
+        let dir = TempDir::new("test_db").unwrap();
+
+        Database::new_from_path(dir.path())
+    }
 
     #[test]
     fn can_create_database() {
-        config::create_config_dir();
-
-        let db = Database::new();
+        let db = create_test_database();
 
         db.put(b"hello", b"world").expect("Could not set key-value");
 
@@ -74,5 +134,44 @@ mod tests {
             };
 
         assert_eq!(result, b"world");
+    }
+
+    #[test]
+    fn can_insert_and_retrieve_full_block() {
+        let db = create_test_database();
+
+        let mut full_block = FullBlock::new();
+        full_block.set_hash(vec![1; 32]);
+
+        db.put_proto(&full_block).expect("Could not insert full block into database");
+
+        let full_block_key = full_block.get_key();
+        let db_full_block: FullBlock = db.get_proto(full_block_key.as_ref())
+            .expect("Could not retrieve full block")
+            .unwrap();
+
+        assert_eq!(full_block.get_hash(), db_full_block.get_hash());
+    }
+
+    #[test]
+    fn can_insert_and_retrieve_transaction() {
+        let db = create_test_database();
+
+        let mut transaction = Transaction::new();
+        let mut txout = OutputTransaction::new();
+
+        txout.set_transaction_type(OutputTransaction_TransactionType::NORMAL_TX);
+        txout.set_amount(500);
+
+        transaction.mut_txouts().push(txout);
+
+        db.put_proto(&transaction).expect("Could not insert transaction into database");
+
+        let transaction_key = transaction.get_key();
+        let db_transaction: Transaction = db.get_proto(transaction_key.as_ref())
+            .expect("Could not retrieve transaction")
+            .unwrap();
+
+        assert_eq!(db_transaction.get_txouts().len(), 1);
     }
 }

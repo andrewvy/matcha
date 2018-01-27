@@ -8,7 +8,7 @@ use failure::Error;
 
 use matcha_pb::{Block, SignedBlock, FullBlock};
 use constants;
-use transaction::TransactionExtension;
+use transaction::TransactionExt;
 
 /*
  * Hashing:
@@ -26,9 +26,8 @@ use transaction::TransactionExtension;
  *   t<transaction.hash> -> Transaction
  *   u<UnspentTxout> -> TXOUT
  *
- * b: Block
+ * b: FullBlock
  * t: Transaction
- * u: UTXO
  */
 
 const BLOCK_HEADER_SIZE: usize = 108;

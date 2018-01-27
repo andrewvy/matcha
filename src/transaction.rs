@@ -14,7 +14,7 @@ use matcha_pb::Transaction;
  * - Number of OutputTransactions must be greater than 0
  */
 
-pub trait TransactionExtension {
+pub trait TransactionExt {
     fn to_hash(&self) -> sha256::Digest;
     fn is_valid(&self) -> bool;
     fn txins_are_valid(&self) -> bool;
@@ -23,7 +23,7 @@ pub trait TransactionExtension {
     fn amount_transfer_is_valid(&self) -> bool;
 }
 
-impl TransactionExtension for Transaction {
+impl TransactionExt for Transaction {
     fn to_hash(&self) -> sha256::Digest {
         let mut buffer = BytesMut::new();
 
