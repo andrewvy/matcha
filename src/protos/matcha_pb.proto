@@ -11,6 +11,7 @@ message WalletKeypair {
   bytes public_key = 2;
   bytes secret_key = 3;
   uint64 amount = 4;
+  uint32 network_type = 5;
 }
 
 message InputTransaction {
