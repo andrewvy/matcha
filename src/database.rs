@@ -130,7 +130,7 @@ mod tests {
     use tempdir::TempDir;
     use rust_sodium::crypto::sign;
 
-    use matcha_pb::{OutputTransaction, OutputTransaction_TransactionType, Transaction};
+    use matcha_pb::{OutputTransaction, OutputTransactionType, Transaction};
     use block::{self, BlockExt, SignedBlockExt};
 
     fn create_test_database() -> Database {
@@ -179,7 +179,7 @@ mod tests {
         let mut transaction = Transaction::new();
         let mut txout = OutputTransaction::new();
 
-        txout.set_transaction_type(OutputTransaction_TransactionType::NORMAL_TX);
+        txout.set_transaction_type(OutputTransactionType::NORMAL_TX);
         txout.set_amount(500);
 
         transaction.mut_txouts().push(txout);
@@ -203,7 +203,7 @@ mod tests {
         let mut transaction = Transaction::new();
         let mut txout = OutputTransaction::new();
 
-        txout.set_transaction_type(OutputTransaction_TransactionType::NORMAL_TX);
+        txout.set_transaction_type(OutputTransactionType::NORMAL_TX);
         txout.set_amount(500);
 
         transaction.mut_txouts().push(txout);

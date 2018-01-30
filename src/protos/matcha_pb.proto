@@ -22,52 +22,52 @@ message InputTransaction {
   bytes public_key = 4;
 }
 
+enum OutputTransactionType {
+  NORMAL_TX = 0;
+  DELEGATE_VOTE_TX = 1;
+  USERNAME_REGISTRATION_TX = 2;
+  NEW_POST_TX = 3;
+  AVATAR_UPLOAD_TX = 4;
+  FAVOURITE_POST_TX = 5;
+}
+
+// Normal pubkey -> pubkey TX.
+message NormalTransaction {
+  bytes public_key = 1;
+}
+
+// DelegateVotes are calculated at every re-election
+// interval, but only if they are unspent.
+message DelegateVoteTransaction {
+  bytes delegate_public_key = 1;
+  bytes public_key = 2;
+}
+
+// Vanity alphanumeric usernames are optional.
+message UsernameRegistrationTransaction {
+  string username = 1;
+}
+
+// The max content limit is 140 codepoints, NFC-normalized.
+message NewPostTransaction {
+  bytes content = 1;
+}
+
+// Avatar images are able to be stored in the blockdata,
+// but will cost more per byte based on a exponential curve
+// to deter uploading large avatar images.
+message AvatarUploadTransaction {
+  bytes image_data = 1;
+}
+
+// Must reference valid txid + txout that is a NewPostTransaction.
+message FavouritePostTransaction {
+  bytes tx_id = 1;
+  uint32 txout_index = 2;
+}
+
 message OutputTransaction {
-  enum TransactionType {
-    NORMAL_TX = 0;
-    DELEGATE_VOTE_TX = 1;
-    USERNAME_REGISTRATION_TX = 2;
-    NEW_POST_TX = 3;
-    AVATAR_UPLOAD_TX = 4;
-    FAVOURITE_POST_TX = 5;
-  }
-
-  // Normal pubkey -> pubkey TX.
-  message NormalTransaction {
-    bytes public_key = 1;
-  }
-
-  // DelegateVotes are calculated at every re-election
-  // interval, but only if they are unspent.
-  message DelegateVoteTransaction {
-    bytes delegate_public_key = 1;
-    bytes public_key = 2;
-  }
-
-  // Vanity alphanumeric usernames are optional.
-  message UsernameRegistrationTransaction {
-    string username = 1;
-  }
-
-  // The max content limit is 140 codepoints, NFC-normalized.
-  message NewPostTransaction {
-    bytes content = 1;
-  }
-
-  // Avatar images are able to be stored in the blockdata,
-  // but will cost more per byte based on a exponential curve
-  // to deter uploading large avatar images.
-  message AvatarUploadTransaction {
-    bytes image_data = 1;
-  }
-
-  // Must reference valid txid + txout that is a NewPostTransaction.
-  message FavouritePostTransaction {
-    bytes tx_id = 1;
-    uint32 txout_index = 2;
-  }
-
-  TransactionType transaction_type = 1;
+  OutputTransactionType transaction_type = 1;
   uint64 amount = 2;
 
   NormalTransaction normal_tx = 3;
@@ -78,10 +78,29 @@ message OutputTransaction {
   FavouritePostTransaction favourite_post_tx = 8;
 }
 
+message UnspentOutputTransaction {
+  OutputTransactionType transaction_type = 1;
+  uint64 amount = 2;
+  bool spent = 3;
+
+  NormalTransaction normal_tx = 4;
+  DelegateVoteTransaction delegate_vote_tx = 5;
+  UsernameRegistrationTransaction username_registration_tx = 6;
+  NewPostTransaction new_post_tx = 7;
+  AvatarUploadTransaction avatar_upload_tx = 8;
+  FavouritePostTransaction favourite_post_tx = 9;
+}
+
 message Transaction {
   bytes id = 1;
   repeated InputTransaction txins = 2;
   repeated OutputTransaction txouts = 3;
+}
+
+message UnspentTransaction {
+  bytes id = 1;
+  bool coinbase = 2;
+  repeated UnspentOutputTransaction unspect_txouts = 3;
 }
 
 message Block {
