@@ -1,5 +1,7 @@
 use rust_sodium::crypto::hash::sha256;
 use bytes::BytesMut;
+use ring::digest::Context;
+use merkle::Hashable;
 
 #[allow(unused_imports)]
 use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
@@ -15,6 +17,7 @@ use matcha_pb::Transaction;
  */
 
 pub trait TransactionExt {
+    fn get_hash_context(&self) -> BytesMut;
     fn to_hash(&self) -> sha256::Digest;
     fn is_valid(&self) -> bool;
     fn txins_are_valid(&self) -> bool;
@@ -24,7 +27,7 @@ pub trait TransactionExt {
 }
 
 impl TransactionExt for Transaction {
-    fn to_hash(&self) -> sha256::Digest {
+    fn get_hash_context(&self) -> BytesMut {
         let mut buffer = BytesMut::new();
 
         buffer.extend_from_slice(self.get_id());
@@ -46,6 +49,12 @@ impl TransactionExt for Transaction {
             buffer.extend_from_slice(wtr.as_slice());
             buffer.extend_from_slice(&[0; 32]);
         });
+
+        buffer
+    }
+
+    fn to_hash(&self) -> sha256::Digest {
+        let buffer = self.get_hash_context();
 
         sha256::hash(buffer.to_vec().as_slice())
     }
@@ -87,6 +96,13 @@ impl TransactionExt for Transaction {
         // The sum of this input money must be greater or equal to the sum of the txouts.
 
         return true;
+    }
+}
+
+impl Hashable for Transaction {
+    fn update_context(&self, context: &mut Context) {
+        let bytes = self.get_hash_context();
+        context.update(&bytes);
     }
 }
 

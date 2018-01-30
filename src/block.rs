@@ -3,10 +3,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rust_sodium::crypto::sign::{self, PublicKey, SecretKey, Signature};
 use rust_sodium::crypto::sign::{SIGNATUREBYTES};
 use rust_sodium::crypto::hash::sha256;
+use ring::digest::SHA256;
 use bytes::{BytesMut, BufMut, LittleEndian};
 use failure::Error;
+use merkle::MerkleTree;
 
-use matcha_pb::{Block, SignedBlock, FullBlock};
+use matcha_pb::{Block, SignedBlock, FullBlock, Transaction};
 use constants;
 use transaction::TransactionExt;
 
@@ -40,6 +42,8 @@ pub trait BlockExt {
     fn get_header(&self) -> BytesMut;
     fn sign(&self, secret_key: &SecretKey) -> Result<SignedBlock, Error>;
     fn valid_header(&self) -> bool;
+    fn get_merkle_tree(&self) -> MerkleTree<Transaction>;
+    fn get_merkle_root(&self) -> Vec<u8>;
 }
 
 impl BlockExt for Block {
@@ -83,6 +87,15 @@ impl BlockExt for Block {
         number_of_bytes += 8;
 
         return number_of_bytes == BLOCK_HEADER_SIZE;
+    }
+
+    fn get_merkle_tree(&self) -> MerkleTree<Transaction> {
+        MerkleTree::from_vec(&SHA256, self.get_transactions().to_vec())
+    }
+
+    fn get_merkle_root(&self) -> Vec<u8> {
+        let tree = self.get_merkle_tree();
+        tree.root_hash().clone()
     }
 }
 
@@ -218,6 +231,7 @@ fn create_block_template() -> Block {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use matcha_pb::Transaction;
 
     #[test]
     fn can_create_block_template() {
@@ -283,5 +297,22 @@ mod tests {
         let full_block = signed_block.hash();
 
         assert_eq!(full_block.is_valid(), true);
+    }
+
+    #[test]
+    fn can_generate_merkle_root_hash_for_block() {
+        let mut block = create_block_template();
+        let transaction = Transaction::new();
+        let copy_transaction = transaction.clone();
+
+        block.mut_transactions().push(transaction);
+
+        let tree = block.get_merkle_tree();
+        let proof = tree.gen_proof(copy_transaction).unwrap();
+
+        assert_eq!(
+            proof.validate(tree.root_hash()),
+            true
+        );
     }
 }

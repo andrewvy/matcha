@@ -1,21 +1,26 @@
-extern crate clap;
-extern crate bytes;
 extern crate byteorder;
+extern crate bytes;
+extern crate clap;
 extern crate futures;
-extern crate tempdir;
-extern crate tokio_io;
-extern crate tokio_core;
-extern crate tokio_timer;
-extern crate rust_sodium;
 extern crate hex;
-extern crate serde;
+extern crate merkle;
 extern crate protobuf;
-extern crate uuid;
 extern crate rand;
 extern crate rocksdb;
+extern crate ring;
+extern crate rust_sodium;
+extern crate serde;
+extern crate tempdir;
+extern crate tokio_core;
+extern crate tokio_io;
+extern crate tokio_timer;
+extern crate uuid;
 
+#[allow(unused_imports)]
 #[macro_use] extern crate failure;
+#[allow(unused_imports)]
 #[macro_use] extern crate failure_derive;
+#[allow(unused_imports)]
 #[macro_use] extern crate serde_derive;
 
 pub mod block;
