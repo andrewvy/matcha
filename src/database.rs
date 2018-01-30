@@ -10,7 +10,8 @@ use transaction::TransactionExt;
 use config;
 
 #[allow(dead_code)]
-struct Database {
+#[derive(Debug)]
+pub struct Database {
     connection: DB
 }
 
@@ -72,12 +73,13 @@ impl Database {
 }
 
 pub trait Storeable {
-    fn get_key_prefix(&self) -> u8;
+    fn get_key_prefix() -> u8;
     fn get_key(&self) -> Vec<u8>;
+    fn insert(&self, database: &Database) -> Result<(), Error>;
 }
 
 impl Storeable for FullBlock {
-    fn get_key_prefix(&self) -> u8 {
+    fn get_key_prefix() -> u8 {
         'b' as u8
     }
 
@@ -85,15 +87,25 @@ impl Storeable for FullBlock {
         let mut key = Vec::with_capacity(KEY_LEN);
         let hash = self.get_hash();
 
-        key.push(self.get_key_prefix());
+        key.push(FullBlock::get_key_prefix());
         key.extend_from_slice(hash.as_ref());
 
         key
     }
+
+    fn insert(&self, database: &Database) -> Result<(), Error> {
+        let transactions = self.get_signed_block().get_block().get_transactions();
+
+        transactions.iter().for_each(move |transaction| {
+            transaction.insert(&database).expect("Could not insert transaction")
+        });
+
+        database.put_proto(self)
+    }
 }
 
 impl Storeable for Transaction {
-    fn get_key_prefix(&self) -> u8 {
+    fn get_key_prefix() -> u8 {
         't' as u8
     }
 
@@ -101,10 +113,14 @@ impl Storeable for Transaction {
         let mut key = Vec::with_capacity(KEY_LEN);
         let hash = self.to_hash();
 
-        key.push(self.get_key_prefix());
+        key.push(Transaction::get_key_prefix());
         key.extend_from_slice(hash.as_ref());
 
         key
+    }
+
+    fn insert(&self, database: &Database) -> Result<(), Error> {
+        database.put_proto(self)
     }
 }
 
@@ -112,7 +128,10 @@ impl Storeable for Transaction {
 mod tests {
     use super::*;
     use tempdir::TempDir;
-    use matcha_pb::{OutputTransaction, OutputTransaction_TransactionType};
+    use rust_sodium::crypto::sign;
+
+    use matcha_pb::{OutputTransaction, OutputTransaction_TransactionType, Transaction};
+    use block::{self, BlockExt, SignedBlockExt};
 
     fn create_test_database() -> Database {
         let dir = TempDir::new("test_db").unwrap();
@@ -173,5 +192,44 @@ mod tests {
             .unwrap();
 
         assert_eq!(db_transaction.get_txouts().len(), 1);
+    }
+
+    #[test]
+    fn inserting_blocks_inserts_their_transactions() {
+        let db = create_test_database();
+        let (public_key, secret_key) = sign::gen_keypair();
+
+        let mut block = block::create_block_template();
+        let mut transaction = Transaction::new();
+        let mut txout = OutputTransaction::new();
+
+        txout.set_transaction_type(OutputTransaction_TransactionType::NORMAL_TX);
+        txout.set_amount(500);
+
+        transaction.mut_txouts().push(txout);
+
+        let transaction_key = transaction.get_key();
+
+        block.mut_transactions().push(transaction);
+        block.set_previous_hash(vec![0; 32]);
+        block.set_transaction_root(vec![0; 32]);
+        block.set_public_key_from_struct(public_key);
+
+        let signed_block = block.sign(&secret_key).unwrap();
+        let full_block = signed_block.hash();
+        let full_block_key = full_block.get_key();
+
+        full_block.insert(&db).expect("Could not insert block into database");
+
+        let db_transaction: Transaction = db.get_proto(transaction_key.as_ref())
+            .expect("Could not retrieve transaction")
+            .unwrap();
+
+        let db_full_block: FullBlock = db.get_proto(full_block_key.as_ref())
+            .expect("Could not retrieve full block")
+            .unwrap();
+
+        assert_eq!(db_transaction.get_txouts().len(), 1);
+        assert_eq!(full_block.get_hash(), db_full_block.get_hash());
     }
 }

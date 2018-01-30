@@ -206,7 +206,7 @@ impl FullBlockExt for FullBlock {
 }
 
 #[allow(dead_code)]
-fn create_block_template() -> Block {
+pub fn create_block_template() -> Block {
     let mut block = Block::new();
     let current_timestamp: u64 = SystemTime::now()
         .duration_since(UNIX_EPOCH)
