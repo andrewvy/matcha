@@ -8,6 +8,8 @@ use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
 
 use matcha_pb::Transaction;
 
+use database::{self, Database, Storeable};
+
 /*
  * A transaction is valid if all these conditions are true:
  * - InputTransactions must reference unspent OutputTransactions (UTXOs, unspect transaction outputs)
@@ -19,11 +21,11 @@ use matcha_pb::Transaction;
 pub trait TransactionExt {
     fn get_hash_context(&self) -> BytesMut;
     fn to_hash(&self) -> sha256::Digest;
-    fn is_valid(&self) -> bool;
+    fn is_valid(&self, db: &Database) -> bool;
     fn txins_are_valid(&self) -> bool;
     fn txouts_are_valid(&self) -> bool;
     fn txins_reference_unspent_txouts(&self) -> bool;
-    fn amount_transfer_is_valid(&self) -> bool;
+    fn amount_transfer_is_valid(&self, db: &Database) -> bool;
 }
 
 impl TransactionExt for Transaction {
@@ -59,12 +61,12 @@ impl TransactionExt for Transaction {
         sha256::hash(buffer.to_vec().as_slice())
     }
 
-    fn is_valid(&self) -> bool {
+    fn is_valid(&self, db: &Database) -> bool {
         return self.get_txins().len() > 0 &&
             self.get_txouts().len() > 0 &&
             self.txins_are_valid() &&
             self.txouts_are_valid() &&
-            self.amount_transfer_is_valid();
+            self.amount_transfer_is_valid(db);
     }
 
     fn txins_are_valid(&self) -> bool {
@@ -88,14 +90,30 @@ impl TransactionExt for Transaction {
         return true;
     }
 
-    fn amount_transfer_is_valid(&self) -> bool {
-        let _ = self.get_txins();
-        let _ = self.get_txouts();
+    fn amount_transfer_is_valid(&self, db: &Database) -> bool {
+        let txouts = self.get_txouts();
+        let txins = self.get_txins();
+        let mut input_money = 0;
 
-        // @todo(vy): For all txins, get the amounts from their referenced UTXOs.
-        // The sum of this input money must be greater or equal to the sum of the txouts.
+        for txin in txins.iter() {
+            let mut key = Vec::with_capacity(database::KEY_LEN);
+            key.push(Transaction::get_key_prefix());
+            key.extend_from_slice(txin.get_tx_id().as_ref());
 
-        return true;
+            match db.get_proto::<Transaction>(&key).expect("Could not retrieve tx") {
+                Some(tx) => {
+                    let txout_index = txin.get_txout_index();
+                    if let Some(txout) = tx.get_txouts().get(txout_index as usize) {
+                        input_money += txout.amount;
+                    }
+                },
+                None => {},
+            }
+        }
+
+        let output_money = txouts.iter().fold(0, |acc, txout| acc + txout.amount);
+
+        input_money >= output_money
     }
 }
 
@@ -109,8 +127,18 @@ impl Hashable for Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use matcha_pb::InputTransaction;
+    use matcha_pb::{InputTransaction, OutputTransaction, OutputTransactionType};
     use hex;
+    use rust_sodium::crypto::sign;
+    use block::{self, BlockExt, SignedBlockExt};
+    use database::{Storeable};
+    use tempdir::TempDir;
+
+    fn create_test_database() -> Database {
+        let dir = TempDir::new("test_db").unwrap();
+
+        Database::new_from_path(dir.path())
+    }
 
     #[test]
     fn can_hash_empty_transaction() {
@@ -134,5 +162,48 @@ mod tests {
           hex::encode(transaction.to_hash()),
           "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
         );
+    }
+
+    #[test]
+    fn amount_transfer_is_valid() {
+        let db = create_test_database();
+
+        let (public_key, secret_key) = sign::gen_keypair();
+
+        let mut block = block::create_block_template();
+        let mut transaction = Transaction::new();
+        let mut txout = OutputTransaction::new();
+
+        txout.set_transaction_type(OutputTransactionType::NORMAL_TX);
+        txout.set_amount(500);
+
+        &transaction.txouts.push(txout);
+
+        let txid = transaction.to_hash();
+
+        block.mut_transactions().push(transaction);
+        block.set_previous_hash(vec![0; 32]);
+        block.set_transaction_root(vec![0; 32]);
+        block.set_public_key_from_struct(public_key);
+
+        let signed_block = block.sign(&secret_key).unwrap();
+        let full_block = signed_block.hash();
+
+        full_block.insert(&db).expect("Could not insert block into database");
+
+        let mut tx_to_validate = Transaction::new();
+        let mut txin_to_validate = InputTransaction::new();
+        let mut txout_to_validate = OutputTransaction::new();
+
+        txout_to_validate.set_transaction_type(OutputTransactionType::NORMAL_TX);
+        txout_to_validate.set_amount(500);
+
+        txin_to_validate.set_tx_id(txid.as_ref().to_vec());
+        txin_to_validate.set_txout_index(0);
+
+        &tx_to_validate.txins.push(txin_to_validate);
+        &tx_to_validate.txouts.push(txout_to_validate);
+
+        assert_eq!(tx_to_validate.amount_transfer_is_valid(&db), true);
     }
 }

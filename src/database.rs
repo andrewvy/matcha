@@ -15,11 +15,11 @@ pub struct Database {
     connection: DB
 }
 
-const KEY_LEN: usize = hash::sha256::DIGESTBYTES + 1;
+pub const KEY_LEN: usize = hash::sha256::DIGESTBYTES + 1;
 
 #[allow(dead_code)]
 impl Database {
-    fn new() -> Database {
+    pub fn new() -> Database {
         let database_path = config::get_config_dir().join("db");
         let db = DB::open_default(database_path).unwrap();
 
@@ -28,7 +28,7 @@ impl Database {
         }
     }
 
-    fn new_from_path(path: &Path) -> Database {
+    pub fn new_from_path(path: &Path) -> Database {
         let db = DB::open_default(path).unwrap();
 
         Database {
@@ -36,15 +36,15 @@ impl Database {
         }
     }
 
-    fn put(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
+    pub fn put(&self, key: &[u8], value: &[u8]) -> Result<(), Error> {
         self.connection.put(key, value).map_err(|e| { format_err!("An error occured: {}", e) })
     }
 
-    fn get(&self, key: &[u8]) -> Result<Option<DBVector>, Error> {
+    pub fn get(&self, key: &[u8]) -> Result<Option<DBVector>, Error> {
         self.connection.get(key).map_err(|e| { format_err!("An error occured: {}", e) })
     }
 
-    fn put_proto<T: MessageStatic + Storeable>(&self, msg: &T) -> Result<(), Error> {
+    pub fn put_proto<T: MessageStatic + Storeable>(&self, msg: &T) -> Result<(), Error> {
         let key = msg.get_key();
 
         match msg.write_to_bytes() {
@@ -58,7 +58,7 @@ impl Database {
         }
     }
 
-    fn get_proto<T: MessageStatic>(&self, key: &[u8]) -> Result<Option<T>, Error> {
+    pub fn get_proto<T: MessageStatic>(&self, key: &[u8]) -> Result<Option<T>, Error> {
         match self.get(key) {
             Ok(Some(value)) => {
                 match protobuf::parse_from_bytes(value.as_ref()) {

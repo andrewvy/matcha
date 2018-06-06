@@ -11,6 +11,7 @@ use merkle::MerkleTree;
 use matcha_pb::{Block, SignedBlock, FullBlock, Transaction};
 use constants;
 use transaction::TransactionExt;
+use database::Database;
 
 /*
  * Hashing:
@@ -151,9 +152,9 @@ impl SignedBlockExt for SignedBlock {
 }
 
 pub trait FullBlockExt {
-    fn is_valid(&self) -> bool;
+    fn is_valid(&self, db: &Database) -> bool;
     fn witness_signature_is_valid(&self) -> bool;
-    fn transactions_are_valid(&self) -> bool;
+    fn transactions_are_valid(&self, db: &Database) -> bool;
     fn transaction_root_is_valid(&self) -> bool;
     fn block_hash_is_valid(&self) -> bool;
 }
@@ -168,9 +169,9 @@ impl FullBlockExt for FullBlock {
      * - First transaction is a coinbase transaction, which contains reward, left over fees, and maintenance fees
      */
 
-    fn is_valid(&self) -> bool {
+    fn is_valid(&self, db: &Database) -> bool {
         return self.witness_signature_is_valid() &&
-            self.transactions_are_valid() &&
+            self.transactions_are_valid(db) &&
             self.transaction_root_is_valid() &&
             self.block_hash_is_valid();
     }
@@ -181,12 +182,12 @@ impl FullBlockExt for FullBlock {
         true
     }
 
-    fn transactions_are_valid(&self) -> bool {
+    fn transactions_are_valid(&self, db: &Database) -> bool {
         let block = self.get_signed_block().get_block();
         let transactions = block.get_transactions();
 
         transactions.into_iter().all(|transaction| {
-            transaction.is_valid()
+            transaction.is_valid(&db)
         })
     }
 
@@ -232,6 +233,13 @@ pub fn create_block_template() -> Block {
 mod tests {
     use super::*;
     use matcha_pb::Transaction;
+    use tempdir::TempDir;
+
+    fn create_test_database() -> Database {
+        let dir = TempDir::new("test_db").unwrap();
+
+        Database::new_from_path(dir.path())
+    }
 
     #[test]
     fn can_create_block_template() {
@@ -286,6 +294,7 @@ mod tests {
 
     #[test]
     fn can_validate_full_blocks() {
+        let db = create_test_database();
         let mut block = create_block_template();
         let (public_key, secret_key) = sign::gen_keypair();
 
@@ -296,7 +305,7 @@ mod tests {
         let signed_block = block.sign(&secret_key).unwrap();
         let full_block = signed_block.hash();
 
-        assert_eq!(full_block.is_valid(), true);
+        assert_eq!(full_block.is_valid(&db), true);
     }
 
     #[test]
