@@ -80,6 +80,7 @@ fn _debugs<S: Stream<Item = (), Error = Error>>(_: S) {}
 
 fn connect_to_peer(node_data: RefNodeData, handle: Handle, peer_addr: SocketAddr) -> Box<Future<Item = (), Error = Error>> {
     let client = TcpStream::connect(&peer_addr, &handle).and_then(move |conn| {
+        println!("Handling client -> server, the client remote addr is: {}", peer_addr);
         handle_connection(conn, node_data.clone(), handle.clone(), peer_addr);
 
         Ok(())
@@ -197,6 +198,7 @@ fn serve(node_data: RefNodeData, handle: Handle) -> Box<Future<Item = (), Error 
         listener
             .incoming()
             .for_each(move |(conn, peer_addr)| {
+                println!("Handling server -> client, the client remote addr is: {}", peer_addr);
                 handle_connection(conn, node_data.clone(), handle.clone(), peer_addr);
                 Ok(())
             });

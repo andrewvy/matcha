@@ -4512,6 +4512,7 @@ pub struct FullBlock {
     // message fields
     pub hash: ::std::vec::Vec<u8>,
     pub signed_block: ::protobuf::SingularPtrField<SignedBlock>,
+    pub referendum: ::protobuf::SingularPtrField<Referendum>,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
     cached_size: ::protobuf::CachedSize,
@@ -4609,11 +4610,57 @@ impl FullBlock {
     fn mut_signed_block_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<SignedBlock> {
         &mut self.signed_block
     }
+
+    // .matcha.Referendum referendum = 3;
+
+    pub fn clear_referendum(&mut self) {
+        self.referendum.clear();
+    }
+
+    pub fn has_referendum(&self) -> bool {
+        self.referendum.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_referendum(&mut self, v: Referendum) {
+        self.referendum = ::protobuf::SingularPtrField::some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_referendum(&mut self) -> &mut Referendum {
+        if self.referendum.is_none() {
+            self.referendum.set_default();
+        }
+        self.referendum.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_referendum(&mut self) -> Referendum {
+        self.referendum.take().unwrap_or_else(|| Referendum::new())
+    }
+
+    pub fn get_referendum(&self) -> &Referendum {
+        self.referendum.as_ref().unwrap_or_else(|| Referendum::default_instance())
+    }
+
+    fn get_referendum_for_reflect(&self) -> &::protobuf::SingularPtrField<Referendum> {
+        &self.referendum
+    }
+
+    fn mut_referendum_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<Referendum> {
+        &mut self.referendum
+    }
 }
 
 impl ::protobuf::Message for FullBlock {
     fn is_initialized(&self) -> bool {
         for v in &self.signed_block {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
+        for v in &self.referendum {
             if !v.is_initialized() {
                 return false;
             }
@@ -4630,6 +4677,9 @@ impl ::protobuf::Message for FullBlock {
                 },
                 2 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.signed_block)?;
+                },
+                3 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.referendum)?;
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -4650,6 +4700,10 @@ impl ::protobuf::Message for FullBlock {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
+        if let Some(ref v) = self.referendum.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -4661,6 +4715,11 @@ impl ::protobuf::Message for FullBlock {
         }
         if let Some(ref v) = self.signed_block.as_ref() {
             os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
+        }
+        if let Some(ref v) = self.referendum.as_ref() {
+            os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
@@ -4718,6 +4777,11 @@ impl ::protobuf::MessageStatic for FullBlock {
                     FullBlock::get_signed_block_for_reflect,
                     FullBlock::mut_signed_block_for_reflect,
                 ));
+                fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Referendum>>(
+                    "referendum",
+                    FullBlock::get_referendum_for_reflect,
+                    FullBlock::mut_referendum_for_reflect,
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<FullBlock>(
                     "FullBlock",
                     fields,
@@ -4732,6 +4796,7 @@ impl ::protobuf::Clear for FullBlock {
     fn clear(&mut self) {
         self.clear_hash();
         self.clear_signed_block();
+        self.clear_referendum();
         self.unknown_fields.clear();
     }
 }
@@ -4743,6 +4808,365 @@ impl ::std::fmt::Debug for FullBlock {
 }
 
 impl ::protobuf::reflect::ProtobufValue for FullBlock {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Message(self)
+    }
+}
+
+#[derive(PartialEq,Clone,Default)]
+pub struct Referendum {
+    // message fields
+    pub signatures: ::protobuf::RepeatedField<ReferendumSignature>,
+    // special fields
+    unknown_fields: ::protobuf::UnknownFields,
+    cached_size: ::protobuf::CachedSize,
+}
+
+// see codegen.rs for the explanation why impl Sync explicitly
+unsafe impl ::std::marker::Sync for Referendum {}
+
+impl Referendum {
+    pub fn new() -> Referendum {
+        ::std::default::Default::default()
+    }
+
+    pub fn default_instance() -> &'static Referendum {
+        static mut instance: ::protobuf::lazy::Lazy<Referendum> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const Referendum,
+        };
+        unsafe {
+            instance.get(Referendum::new)
+        }
+    }
+
+    // repeated .matcha.ReferendumSignature signatures = 1;
+
+    pub fn clear_signatures(&mut self) {
+        self.signatures.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_signatures(&mut self, v: ::protobuf::RepeatedField<ReferendumSignature>) {
+        self.signatures = v;
+    }
+
+    // Mutable pointer to the field.
+    pub fn mut_signatures(&mut self) -> &mut ::protobuf::RepeatedField<ReferendumSignature> {
+        &mut self.signatures
+    }
+
+    // Take field
+    pub fn take_signatures(&mut self) -> ::protobuf::RepeatedField<ReferendumSignature> {
+        ::std::mem::replace(&mut self.signatures, ::protobuf::RepeatedField::new())
+    }
+
+    pub fn get_signatures(&self) -> &[ReferendumSignature] {
+        &self.signatures
+    }
+
+    fn get_signatures_for_reflect(&self) -> &::protobuf::RepeatedField<ReferendumSignature> {
+        &self.signatures
+    }
+
+    fn mut_signatures_for_reflect(&mut self) -> &mut ::protobuf::RepeatedField<ReferendumSignature> {
+        &mut self.signatures
+    }
+}
+
+impl ::protobuf::Message for Referendum {
+    fn is_initialized(&self) -> bool {
+        for v in &self.signatures {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    ::protobuf::rt::read_repeated_message_into(wire_type, is, &mut self.signatures)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        for value in &self.signatures {
+            let len = value.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+        };
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
+        for v in &self.signatures {
+            os.write_tag(1, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
+        };
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &::std::any::Any {
+        self as &::std::any::Any
+    }
+    fn as_any_mut(&mut self) -> &mut ::std::any::Any {
+        self as &mut ::std::any::Any
+    }
+    fn into_any(self: Box<Self>) -> ::std::boxed::Box<::std::any::Any> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        ::protobuf::MessageStatic::descriptor_static(None::<Self>)
+    }
+}
+
+impl ::protobuf::MessageStatic for Referendum {
+    fn new() -> Referendum {
+        Referendum::new()
+    }
+
+    fn descriptor_static(_: ::std::option::Option<Referendum>) -> &'static ::protobuf::reflect::MessageDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_repeated_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<ReferendumSignature>>(
+                    "signatures",
+                    Referendum::get_signatures_for_reflect,
+                    Referendum::mut_signatures_for_reflect,
+                ));
+                ::protobuf::reflect::MessageDescriptor::new::<Referendum>(
+                    "Referendum",
+                    fields,
+                    file_descriptor_proto()
+                )
+            })
+        }
+    }
+}
+
+impl ::protobuf::Clear for Referendum {
+    fn clear(&mut self) {
+        self.clear_signatures();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for Referendum {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Referendum {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Message(self)
+    }
+}
+
+#[derive(PartialEq,Clone,Default)]
+pub struct ReferendumSignature {
+    // message fields
+    pub signature: ::std::vec::Vec<u8>,
+    // special fields
+    unknown_fields: ::protobuf::UnknownFields,
+    cached_size: ::protobuf::CachedSize,
+}
+
+// see codegen.rs for the explanation why impl Sync explicitly
+unsafe impl ::std::marker::Sync for ReferendumSignature {}
+
+impl ReferendumSignature {
+    pub fn new() -> ReferendumSignature {
+        ::std::default::Default::default()
+    }
+
+    pub fn default_instance() -> &'static ReferendumSignature {
+        static mut instance: ::protobuf::lazy::Lazy<ReferendumSignature> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ReferendumSignature,
+        };
+        unsafe {
+            instance.get(ReferendumSignature::new)
+        }
+    }
+
+    // bytes signature = 1;
+
+    pub fn clear_signature(&mut self) {
+        self.signature.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_signature(&mut self, v: ::std::vec::Vec<u8>) {
+        self.signature = v;
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_signature(&mut self) -> &mut ::std::vec::Vec<u8> {
+        &mut self.signature
+    }
+
+    // Take field
+    pub fn take_signature(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.signature, ::std::vec::Vec::new())
+    }
+
+    pub fn get_signature(&self) -> &[u8] {
+        &self.signature
+    }
+
+    fn get_signature_for_reflect(&self) -> &::std::vec::Vec<u8> {
+        &self.signature
+    }
+
+    fn mut_signature_for_reflect(&mut self) -> &mut ::std::vec::Vec<u8> {
+        &mut self.signature
+    }
+}
+
+impl ::protobuf::Message for ReferendumSignature {
+    fn is_initialized(&self) -> bool {
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.signature)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if !self.signature.is_empty() {
+            my_size += ::protobuf::rt::bytes_size(1, &self.signature);
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
+        if !self.signature.is_empty() {
+            os.write_bytes(1, &self.signature)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &::std::any::Any {
+        self as &::std::any::Any
+    }
+    fn as_any_mut(&mut self) -> &mut ::std::any::Any {
+        self as &mut ::std::any::Any
+    }
+    fn into_any(self: Box<Self>) -> ::std::boxed::Box<::std::any::Any> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        ::protobuf::MessageStatic::descriptor_static(None::<Self>)
+    }
+}
+
+impl ::protobuf::MessageStatic for ReferendumSignature {
+    fn new() -> ReferendumSignature {
+        ReferendumSignature::new()
+    }
+
+    fn descriptor_static(_: ::std::option::Option<ReferendumSignature>) -> &'static ::protobuf::reflect::MessageDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
+                    "signature",
+                    ReferendumSignature::get_signature_for_reflect,
+                    ReferendumSignature::mut_signature_for_reflect,
+                ));
+                ::protobuf::reflect::MessageDescriptor::new::<ReferendumSignature>(
+                    "ReferendumSignature",
+                    fields,
+                    file_descriptor_proto()
+                )
+            })
+        }
+    }
+}
+
+impl ::protobuf::Clear for ReferendumSignature {
+    fn clear(&mut self) {
+        self.clear_signature();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for ReferendumSignature {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for ReferendumSignature {
     fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
         ::protobuf::reflect::ProtobufValueRef::Message(self)
     }
@@ -7659,47 +8083,50 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x20\x01(\x04R\ttimestamp\x127\n\x0ctransactions\x18\x06\x20\x03(\x0b2\
     \x13.matcha.TransactionR\x0ctransactions\"P\n\x0bSignedBlock\x12\x1c\n\t\
     signature\x18\x01\x20\x01(\x0cR\tsignature\x12#\n\x05block\x18\x02\x20\
-    \x01(\x0b2\r.matcha.BlockR\x05block\"W\n\tFullBlock\x12\x12\n\x04hash\
-    \x18\x01\x20\x01(\x0cR\x04hash\x126\n\x0csigned_block\x18\x02\x20\x01(\
-    \x0b2\x13.matcha.SignedBlockR\x0bsignedBlock\"\x98\x02\n\x07Message\x12>\
-    \n\x0cnetwork_type\x18\x01\x20\x01(\x0e2\x1b.matcha.Message.NetworkTypeR\
-    \x0bnetworkType\x12(\n\x04type\x18\x02\x20\x01(\x0e2\x14.matcha.Message.\
-    TypeR\x04type\x12)\n\x07request\x18\x03\x20\x01(\x0b2\x0f.matcha.Request\
-    R\x07request\x12,\n\x08response\x18\x04\x20\x01(\x0b2\x10.matcha.Respons\
-    eR\x08response\"!\n\x04Type\x12\x0b\n\x07REQUEST\x10\0\x12\x0c\n\x08RESP\
-    ONSE\x10\x01\"'\n\x0bNetworkType\x12\x0b\n\x07PRODNET\x10\0\x12\x0b\n\
-    \x07TESTNET\x10\x01\"\xb0\x02\n\x07Request\x12(\n\x04type\x18\x01\x20\
-    \x01(\x0e2\x14.matcha.Request.TypeR\x04type\x126\n\x0cping_request\x18\
-    \x02\x20\x01(\x0b2\x13.matcha.PingRequestR\x0bpingRequest\x12C\n\x11peer\
-    _list_request\x18\x03\x20\x01(\x0b2\x17.matcha.PeerListRequestR\x0fpeerL\
-    istRequest\x128\n\x0fversion_request\x18\x04\x20\x01(\x0b2\x0f.matcha.Ve\
-    rsionR\x0eversionRequest\"D\n\x04Type\x12\x13\n\x0fVERSION_REQUEST\x10\0\
-    \x12\x10\n\x0cPING_REQUEST\x10\x01\x12\x15\n\x11PEER_LIST_REQUEST\x10\
-    \x02\"\x80\x04\n\x08Response\x12/\n\x06status\x18\x01\x20\x01(\x0e2\x17.\
-    matcha.Response.StatusR\x06status\x12)\n\x04type\x18\x02\x20\x01(\x0e2\
-    \x15.matcha.Response.TypeR\x04type\x12\x20\n\x0bdescription\x18\x03\x20\
-    \x01(\tR\x0bdescription\x129\n\rping_response\x18\x04\x20\x01(\x0b2\x14.\
-    matcha.PingResponseR\x0cpingResponse\x12F\n\x12peer_list_response\x18\
-    \x05\x20\x01(\x0b2\x18.matcha.PeerListResponseR\x10peerListResponse\x12:\
-    \n\x10version_response\x18\x06\x20\x01(\x0b2\x0f.matcha.VersionR\x0fvers\
-    ionResponse\"X\n\x06Status\x12\x13\n\x0fINVALID_REQUEST\x10\0\x12\x07\n\
-    \x03ACK\x10\x01\x12\x15\n\x11TOO_MANY_REQUESTS\x10\x02\x12\x19\n\x15INTE\
-    RNAL_SERVER_ERROR\x10\x03\"]\n\x04Type\x12\x14\n\x10DESCRIPTION_ONLY\x10\
-    \0\x12\x14\n\x10VERSION_RESPONSE\x10\x01\x12\x11\n\rPING_RESPONSE\x10\
-    \x02\x12\x16\n\x12PEER_LIST_RESPONSE\x10\x03\"N\n\x07Version\x12%\n\x0ev\
-    ersion_number\x18\x01\x20\x01(\rR\rversionNumber\x12\x1c\n\ttimestamp\
-    \x18\x02\x20\x01(\x04R\ttimestamp\"\x1a\n\x04Peer\x12\x12\n\x04addr\x18\
-    \x02\x20\x01(\tR\x04addr\".\n\x08PeerList\x12\"\n\x05peers\x18\x01\x20\
-    \x03(\x0b2\x0c.matcha.PeerR\x05peers\"/\n\x0bPingRequest\x12\x20\n\x04pe\
-    er\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"0\n\x0cPingResponse\
-    \x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"@\n\
-    \x0fPeerListRequest\x12-\n\tpeer_list\x18\x01\x20\x01(\x0b2\x10.matcha.P\
-    eerListR\x08peerList\"A\n\x10PeerListResponse\x12-\n\tpeer_list\x18\x01\
-    \x20\x01(\x0b2\x10.matcha.PeerListR\x08peerList*\x98\x01\n\x15OutputTran\
-    sactionType\x12\r\n\tNORMAL_TX\x10\0\x12\x14\n\x10DELEGATE_VOTE_TX\x10\
-    \x01\x12\x1c\n\x18USERNAME_REGISTRATION_TX\x10\x02\x12\x0f\n\x0bNEW_POST\
-    _TX\x10\x03\x12\x14\n\x10AVATAR_UPLOAD_TX\x10\x04\x12\x15\n\x11FAVOURITE\
-    _POST_TX\x10\x05b\x06proto3\
+    \x01(\x0b2\r.matcha.BlockR\x05block\"\x8b\x01\n\tFullBlock\x12\x12\n\x04\
+    hash\x18\x01\x20\x01(\x0cR\x04hash\x126\n\x0csigned_block\x18\x02\x20\
+    \x01(\x0b2\x13.matcha.SignedBlockR\x0bsignedBlock\x122\n\nreferendum\x18\
+    \x03\x20\x01(\x0b2\x12.matcha.ReferendumR\nreferendum\"I\n\nReferendum\
+    \x12;\n\nsignatures\x18\x01\x20\x03(\x0b2\x1b.matcha.ReferendumSignature\
+    R\nsignatures\"3\n\x13ReferendumSignature\x12\x1c\n\tsignature\x18\x01\
+    \x20\x01(\x0cR\tsignature\"\x98\x02\n\x07Message\x12>\n\x0cnetwork_type\
+    \x18\x01\x20\x01(\x0e2\x1b.matcha.Message.NetworkTypeR\x0bnetworkType\
+    \x12(\n\x04type\x18\x02\x20\x01(\x0e2\x14.matcha.Message.TypeR\x04type\
+    \x12)\n\x07request\x18\x03\x20\x01(\x0b2\x0f.matcha.RequestR\x07request\
+    \x12,\n\x08response\x18\x04\x20\x01(\x0b2\x10.matcha.ResponseR\x08respon\
+    se\"!\n\x04Type\x12\x0b\n\x07REQUEST\x10\0\x12\x0c\n\x08RESPONSE\x10\x01\
+    \"'\n\x0bNetworkType\x12\x0b\n\x07PRODNET\x10\0\x12\x0b\n\x07TESTNET\x10\
+    \x01\"\xb0\x02\n\x07Request\x12(\n\x04type\x18\x01\x20\x01(\x0e2\x14.mat\
+    cha.Request.TypeR\x04type\x126\n\x0cping_request\x18\x02\x20\x01(\x0b2\
+    \x13.matcha.PingRequestR\x0bpingRequest\x12C\n\x11peer_list_request\x18\
+    \x03\x20\x01(\x0b2\x17.matcha.PeerListRequestR\x0fpeerListRequest\x128\n\
+    \x0fversion_request\x18\x04\x20\x01(\x0b2\x0f.matcha.VersionR\x0eversion\
+    Request\"D\n\x04Type\x12\x13\n\x0fVERSION_REQUEST\x10\0\x12\x10\n\x0cPIN\
+    G_REQUEST\x10\x01\x12\x15\n\x11PEER_LIST_REQUEST\x10\x02\"\x80\x04\n\x08\
+    Response\x12/\n\x06status\x18\x01\x20\x01(\x0e2\x17.matcha.Response.Stat\
+    usR\x06status\x12)\n\x04type\x18\x02\x20\x01(\x0e2\x15.matcha.Response.T\
+    ypeR\x04type\x12\x20\n\x0bdescription\x18\x03\x20\x01(\tR\x0bdescription\
+    \x129\n\rping_response\x18\x04\x20\x01(\x0b2\x14.matcha.PingResponseR\
+    \x0cpingResponse\x12F\n\x12peer_list_response\x18\x05\x20\x01(\x0b2\x18.\
+    matcha.PeerListResponseR\x10peerListResponse\x12:\n\x10version_response\
+    \x18\x06\x20\x01(\x0b2\x0f.matcha.VersionR\x0fversionResponse\"X\n\x06St\
+    atus\x12\x13\n\x0fINVALID_REQUEST\x10\0\x12\x07\n\x03ACK\x10\x01\x12\x15\
+    \n\x11TOO_MANY_REQUESTS\x10\x02\x12\x19\n\x15INTERNAL_SERVER_ERROR\x10\
+    \x03\"]\n\x04Type\x12\x14\n\x10DESCRIPTION_ONLY\x10\0\x12\x14\n\x10VERSI\
+    ON_RESPONSE\x10\x01\x12\x11\n\rPING_RESPONSE\x10\x02\x12\x16\n\x12PEER_L\
+    IST_RESPONSE\x10\x03\"N\n\x07Version\x12%\n\x0eversion_number\x18\x01\
+    \x20\x01(\rR\rversionNumber\x12\x1c\n\ttimestamp\x18\x02\x20\x01(\x04R\t\
+    timestamp\"\x1a\n\x04Peer\x12\x12\n\x04addr\x18\x02\x20\x01(\tR\x04addr\
+    \".\n\x08PeerList\x12\"\n\x05peers\x18\x01\x20\x03(\x0b2\x0c.matcha.Peer\
+    R\x05peers\"/\n\x0bPingRequest\x12\x20\n\x04peer\x18\x01\x20\x01(\x0b2\
+    \x0c.matcha.PeerR\x04peer\"0\n\x0cPingResponse\x12\x20\n\x04peer\x18\x01\
+    \x20\x01(\x0b2\x0c.matcha.PeerR\x04peer\"@\n\x0fPeerListRequest\x12-\n\t\
+    peer_list\x18\x01\x20\x01(\x0b2\x10.matcha.PeerListR\x08peerList\"A\n\
+    \x10PeerListResponse\x12-\n\tpeer_list\x18\x01\x20\x01(\x0b2\x10.matcha.\
+    PeerListR\x08peerList*\x98\x01\n\x15OutputTransactionType\x12\r\n\tNORMA\
+    L_TX\x10\0\x12\x14\n\x10DELEGATE_VOTE_TX\x10\x01\x12\x1c\n\x18USERNAME_R\
+    EGISTRATION_TX\x10\x02\x12\x0f\n\x0bNEW_POST_TX\x10\x03\x12\x14\n\x10AVA\
+    TAR_UPLOAD_TX\x10\x04\x12\x15\n\x11FAVOURITE_POST_TX\x10\x05b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

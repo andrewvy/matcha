@@ -124,6 +124,15 @@ message SignedBlock {
 message FullBlock {
   bytes hash = 1;
   SignedBlock signed_block = 2;
+  Referendum referendum = 3;
+}
+
+message Referendum {
+  repeated ReferendumSignature signatures = 1;
+}
+
+message ReferendumSignature {
+  bytes signature = 1;
 }
 
 // ---
